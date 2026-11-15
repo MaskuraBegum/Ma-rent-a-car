@@ -2,7 +2,7 @@ import Trip from "../models/Trip.js";
 import Client from "../models/Client.js";
 
 export const createBooking = async (req, res) => {
-  const { name, whatsapp, date, time, location, vehicleType, notes, website } = req.body;
+  const { name, whatsapp, date, time, pickup, drop, dropDate, dropTime, vehicleType, notes, website } = req.body;
 
   // bots fill hidden fields: pretend it worked and save nothing
   if (website) return res.status(201).json({ message: "Request received." });
@@ -13,6 +13,19 @@ export const createBooking = async (req, res) => {
   }
 
   const day = new Date(`${date}T00:00:00+06:00`);
+
+  // optional drop date and time: the trip hours are worked out from them
+  const dropDay = dropDate ? new Date(`${dropDate}T00:00:00+06:00`) : null;
+  if (dropDay && isNaN(dropDay)) return res.status(400).json({ message: "Invalid drop date" });
+  if (dropDay && dropDay < day) return res.status(400).json({ message: "The drop date cannot be before the pickup date" });
+  if (dropTime) {
+    const dropAt = new Date(`${dropDate || date}T${dropTime}:00+06:00`);
+    if (dropAt <= pickupAt) {
+      return res
+        .status(400)
+        .json({ message: "The drop time must be after the pickup time. If you drop on another day, choose the drop date." });
+    }
+  }
 
   // returning customer? link the client and unit automatically
   const known = await Client.findOne({ $or: [{ phone: whatsapp }, { "units.phone": whatsapp }] });
@@ -29,7 +42,10 @@ export const createBooking = async (req, res) => {
     status: "requested",
     date: day,
     startTime: time,
-    location,
+    pickupLocation: pickup,
+    dropLocation: drop,
+    dropDate: dropDay || undefined,
+    finishTime: dropTime,
     passengerName: name,
     passengerPhone: whatsapp,
     vehicleType,

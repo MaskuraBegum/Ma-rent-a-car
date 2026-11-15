@@ -2,39 +2,42 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api.js";
 import { Button, Field, inputCls } from "../components/ui.jsx";
+import LocationInput from "../components/LocationInput.jsx";
+import VehicleFields, { vehiclePayload, vehicleState } from "../components/VehicleFields.jsx";
 import { useToast } from "../components/Toast.jsx";
 import { useLookups } from "../hooks.js";
 import { clientOptions, clientValue, dhakaToday, fmtPhone, splitClient, taka, toDateInput } from "../utils.js";
 
 const NUMBERS = ["totalKm", "rent", "ownerAmount", "others"];
 const MONEY = ["rent", "ownerAmount", "others"];
+const CLEARABLE = ["chalanNo", "dropDate", "dropLocation", "notes"]; // when editing, an empty box clears the value
+const VEHICLE_KEYS = ["vehicleSource", "car", "driver", "vendor", "vendorCarNo", "vehicleType", "driverName", "driverPhone"];
 
 const empty = () => ({
   status: "requested",
+  chalanNo: "",
   date: dhakaToday(),
+  dropDate: "",
+  pickupLocation: "",
+  dropLocation: "",
   startTime: "",
   finishTime: "",
-  location: "",
+  notes: "",
   clientUnit: "",
   passengerName: "",
   passengerPhone: "",
-  car: "",
-  vehicleType: "",
-  driver: "",
-  driverName: "",
-  driverPhone: "",
-  vendor: "",
+  ...vehicleState(),
   totalKm: "",
   fuelType: "",
   rent: "",
   ownerAmount: "",
   others: "",
-  notes: "",
 });
 
-function buildPayload(v, isEdit) {
+function buildPayload(v, { isEdit, withVehicle }) {
   const body = {};
   for (const [k, val] of Object.entries(v)) {
+    if (VEHICLE_KEYS.includes(k)) continue; // handled below
     if (k === "clientUnit") {
       Object.assign(body, splitClient(val));
       continue;
@@ -42,10 +45,12 @@ function buildPayload(v, isEdit) {
     if (k === "status" && isEdit) continue;
     if (val === "" || val == null) {
       if (isEdit && MONEY.includes(k)) body[k] = 0; // a cleared amount means zero
+      else if (isEdit && CLEARABLE.includes(k)) body[k] = "";
       continue;
     }
     body[k] = NUMBERS.includes(k) ? Number(val) : typeof val === "string" ? val.trim() : val;
   }
+  if (withVehicle) Object.assign(body, vehiclePayload(v));
   return body;
 }
 
@@ -57,6 +62,17 @@ function Section({ title, children }) {
     </section>
   );
 }
+
+const SaveIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><path d="M17 21v-8H7v8M7 3v5h8" />
+  </svg>
+);
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
 
 export default function TripForm() {
   const { id } = useParams();
@@ -71,6 +87,7 @@ export default function TripForm() {
   const another = useRef(false);
 
   const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+  const setVal = (k, value) => setV((s) => ({ ...s, [k]: value }));
 
   useEffect(() => {
     if (!isEdit) return;
@@ -80,48 +97,40 @@ export default function TripForm() {
         setTripStatus(t.status);
         setV({
           ...empty(),
+          ...vehicleState(t),
+          chalanNo: t.chalanNo || "",
           date: toDateInput(t.date),
+          dropDate: t.dropDate ? toDateInput(t.dropDate) : "",
+          pickupLocation: t.pickupLocation || t.location || "", // older trips only have one location
+          dropLocation: t.dropLocation || "",
           startTime: t.startTime || "",
           finishTime: t.finishTime || "",
-          location: t.location || "",
+          notes: t.notes || "",
           clientUnit: clientValue(t),
           passengerName: t.passengerName || "",
           passengerPhone: fmtPhone(t.passengerPhone),
-          car: t.car?._id || "",
-          vehicleType: t.vehicleType || "",
-          driver: t.driver?._id || "",
-          driverName: t.driverName || "",
-          driverPhone: fmtPhone(t.driverPhone),
-          vendor: t.vendor?._id || "",
           totalKm: t.totalKm ?? "",
           fuelType: t.fuelType || "",
           rent: t.rent ?? "",
           ownerAmount: t.ownerAmount ?? "",
           others: t.others ?? "",
-          notes: t.notes || "",
         });
       })
       .catch((e) => toast(e.message, "err"))
       .finally(() => setLoading(false));
   }, [id, isEdit, toast]);
 
-  // A new booking request gets its driver later with "Assign driver"
-  const showDriver = isEdit ? tripStatus !== "requested" : v.status === "completed";
+  // A new booking request gets its vehicle and driver later with "Assign driver"
+  const showVehicle = isEdit ? tripStatus !== "requested" : v.status === "completed";
   const office = Number(v.rent || 0) - Number(v.ownerAmount || 0);
 
   const submit = async (e) => {
     e.preventDefault();
     if (office < 0) return toast("Owner amount cannot be more than the rent", "err");
+    if (v.dropDate && v.dropDate < v.date) return toast("Drop date cannot be before the pickup date", "err");
     setSaving(true);
     try {
-      const body = buildPayload(v, isEdit);
-      if (!showDriver) {
-        delete body.car;
-        delete body.driver;
-        delete body.driverName;
-        delete body.driverPhone;
-        delete body.vendor;
-      }
+      const body = buildPayload(v, { isEdit, withVehicle: showVehicle });
       const t = isEdit ? await api.patch(`/trips/${id}`, body) : await api.post("/trips", body);
       toast(`Trip #${t.tripNo} saved`);
       if (another.current) {
@@ -141,7 +150,12 @@ export default function TripForm() {
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-xl font-semibold">{isEdit ? "Edit trip" : "New trip"}</h1>
+      <div className="flex items-center gap-2">
+        <h1 className="mr-auto text-xl font-semibold">{isEdit ? "Edit trip" : "New trip"}</h1>
+        <Button variant="secondary" onClick={() => nav(-1)}>
+          ← Go back (ফিরে যান)
+        </Button>
+      </div>
 
       {!isEdit && (
         <div className="flex flex-wrap gap-2">
@@ -163,18 +177,32 @@ export default function TripForm() {
         </div>
       )}
 
-      <Section title="Trip">
-        <Field label="Date *">
+      <Section title="Trip info (ট্রিপ তথ্য)">
+        <Field label="Chalan / invoice no. (optional)">
+          <input className={inputCls} value={v.chalanNo} onChange={set("chalanNo")} placeholder="e.g. 1001" />
+        </Field>
+        <Field label="Pickup date (শুরুর তারিখ) *">
           <input type="date" required className={inputCls} value={v.date} onChange={set("date")} />
         </Field>
-        <Field label="Location *">
-          <input required className={inputCls} value={v.location} onChange={set("location")} placeholder="Mirpur, Uttara, Purbachal" />
+        <Field label="Pickup point (শুরুর স্থান) *" hint="Start typing a place. You can also type any address">
+          <LocationInput required value={v.pickupLocation} onChange={(x) => setVal("pickupLocation", x)} placeholder="e.g. Uttara, Dhaka" />
         </Field>
-        <Field label="Start time">
-          <input type="time" className={inputCls} value={v.startTime} onChange={set("startTime")} />
+        <Field label="Drop point (গন্তব্য) - optional">
+          <LocationInput value={v.dropLocation} onChange={(x) => setVal("dropLocation", x)} placeholder="e.g. Purbachal, Dhaka" />
         </Field>
-        <Field label="Finish time" hint="Total hours are worked out for you">
-          <input type="time" className={inputCls} value={v.finishTime} onChange={set("finishTime")} />
+        <Field label="Drop date (গন্তব্যের তারিখ) - optional" hint="Only when the trip ends on another day">
+          <input type="date" min={v.date} className={inputCls} value={v.dropDate} onChange={set("dropDate")} />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Start time">
+            <input type="time" className={inputCls} value={v.startTime} onChange={set("startTime")} />
+          </Field>
+          <Field label="Finish time">
+            <input type="time" className={inputCls} value={v.finishTime} onChange={set("finishTime")} />
+          </Field>
+        </div>
+        <Field label="Note (নোট) - optional" className="sm:col-span-2">
+          <input className={inputCls} value={v.notes} onChange={set("notes")} placeholder="Optional note" />
         </Field>
       </Section>
 
@@ -197,57 +225,13 @@ export default function TripForm() {
         </Field>
       </Section>
 
-      {showDriver ? (
-        <Section title="Car and driver">
-          <Field label="Car (from your list)">
-            <select className={inputCls} value={v.car} onChange={set("car")}>
-              <option value="">None</option>
-              {cars.map((c) => (
-                <option key={c._id} value={c._id}>
-                  {c.companyName} {c.model}
-                  {c.registrationNo ? ` · ${c.registrationNo}` : ""}
-                  {c.vendor ? ` (Vendor: ${c.vendor.name})` : ""}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Car type (as written in your sheet)">
-            <input className={inputCls} value={v.vehicleType} onChange={set("vehicleType")} placeholder="x noah, private car, Hiace" />
-          </Field>
-          <Field label={`Driver (from your list)${v.status === "completed" && !isEdit ? " *" : ""}`}>
-            <select className={inputCls} value={v.driver} onChange={set("driver")}>
-              <option value="">None</option>
-              {drivers.map((d) => (
-                <option key={d._id} value={d._id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Vendor (outside car)">
-            <select className={inputCls} value={v.vendor} onChange={set("vendor")}>
-              <option value="">None</option>
-              {vendors.map((x) => (
-                <option key={x._id} value={x._id}>
-                  {x.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          {!v.driver && (
-            <>
-              <Field label="Or type the driver's name">
-                <input className={inputCls} value={v.driverName} onChange={set("driverName")} />
-              </Field>
-              <Field label="Driver mobile">
-                <input type="tel" className={inputCls} value={v.driverPhone} onChange={set("driverPhone")} placeholder="+8801XXXXXXXXX" />
-              </Field>
-            </>
-          )}
+      {showVehicle ? (
+        <Section title="Vehicle information (যানবাহনের তথ্য)">
+          <VehicleFields v={v} set={setVal} cars={cars} drivers={drivers} vendors={vendors} />
         </Section>
       ) : (
         <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-600">
-          You will choose the driver and car after saving, with “Assign driver” on the trip.
+          You will choose the vehicle and driver after saving, with “Assign driver” on the trip.
         </p>
       )}
 
@@ -266,7 +250,7 @@ export default function TripForm() {
         <Field label="Rent (৳)">
           <input type="number" min="0" className={inputCls} value={v.rent} onChange={set("rent")} />
         </Field>
-        <Field label="Owner amount (৳)" hint="The share paid to the car owner, vendor or driver">
+        <Field label="Owner / vendor amount (৳)" hint="The share paid to the car owner, vendor or driver">
           <input type="number" min="0" className={inputCls} value={v.ownerAmount} onChange={set("ownerAmount")} />
         </Field>
         <Field label="Others (৳)">
@@ -275,22 +259,19 @@ export default function TripForm() {
         <p className={`self-end pb-2 text-sm ${office < 0 ? "text-red-600" : "text-slate-600"}`}>
           {office < 0 ? "Owner amount cannot be more than the rent." : `Office share: ${taka(office)}`}
         </p>
-        <Field label="Notes" className="sm:col-span-2">
-          <input className={inputCls} value={v.notes} onChange={set("notes")} />
-        </Field>
       </Section>
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="secondary" onClick={() => nav("/")}>
-          Cancel
+          Cancel (বাতিল)
         </Button>
         {!isEdit && (
           <Button type="submit" variant="secondary" disabled={saving} onClick={() => (another.current = true)}>
-            Save and add another
+            <PlusIcon /> Save &amp; add more (সেভ করে আরও যোগ করুন)
           </Button>
         )}
         <Button type="submit" disabled={saving} onClick={() => (another.current = false)}>
-          {saving ? "Saving..." : "Save trip"}
+          <SaveIcon /> {saving ? "Saving..." : "Save (সেভ)"}
         </Button>
       </div>
     </form>

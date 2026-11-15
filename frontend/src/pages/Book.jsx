@@ -1,15 +1,20 @@
 import { useState } from "react";
 import { api } from "../api.js";
 import { Field, inputCls } from "../components/ui.jsx";
-import { dhakaToday } from "../utils.js";
+import LocationInput from "../components/LocationInput.jsx";
+import { dhakaToday, fmtDuration, tripHours } from "../utils.js";
 
-const start = { name: "", whatsapp: "+880", date: "", time: "", location: "", vehicleType: "", notes: "", website: "" };
+const start = { name: "", whatsapp: "+880", date: "", time: "", pickup: "", drop: "", dropDate: "", dropTime: "", vehicleType: "", notes: "", website: "" };
 
 // Public page for customers: simple, mobile first, no login
 export default function Book() {
   const [v, setV] = useState(start);
   const [state, setState] = useState({ status: "form", error: "", tripNo: null });
   const set = (k) => (e) => setV((s) => ({ ...s, [k]: e.target.value }));
+
+  // optional drop date and time: show how long the trip is
+  const hours = tripHours({ date: v.date, startTime: v.time, dropDate: v.dropDate, finishTime: v.dropTime });
+  const dropBeforePickup = v.dropTime && v.time && (v.dropDate ? v.dropDate === v.date && v.dropTime <= v.time : v.dropTime <= v.time);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -57,9 +62,31 @@ export default function Book() {
                   <input required type="time" className={inputCls} value={v.time} onChange={set("time")} />
                 </Field>
               </div>
-              <Field label="Pickup place and where you are going *">
-                <input required className={inputCls} value={v.location} onChange={set("location")} placeholder="Uttara to Purbachal" />
+              <Field label="Pickup place *" hint="Start typing and choose from the list, or type your own address">
+                <LocationInput required value={v.pickup} onChange={(x) => setV((s) => ({ ...s, pickup: x }))} placeholder="e.g. Uttara, Dhaka" />
               </Field>
+              <Field label="Where are you going? (drop place)">
+                <LocationInput value={v.drop} onChange={(x) => setV((s) => ({ ...s, drop: x }))} placeholder="e.g. Cox's Bazar" />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Drop date (optional)" hint="Only if you finish on another day">
+                  <input type="date" min={v.date || dhakaToday()} className={inputCls} value={v.dropDate} onChange={set("dropDate")} />
+                </Field>
+                <Field label="Drop time (optional)">
+                  <input type="time" className={inputCls} value={v.dropTime} onChange={set("dropTime")} />
+                </Field>
+              </div>
+              {(v.dropDate || v.dropTime) && (
+                <p className={`rounded-lg p-3 text-sm ${dropBeforePickup ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-900"}`}>
+                  {dropBeforePickup
+                    ? "The drop time is before the pickup time. If you finish on another day, choose the drop date."
+                    : hours !== null
+                    ? `Trip time: about ${fmtDuration(hours)}`
+                    : !v.date || !v.time
+                    ? "Choose the pickup date and time first."
+                    : "Add the drop time to see how many hours."}
+                </p>
+              )}
               <Field label="Type of car (if you have a choice)">
                 <input className={inputCls} value={v.vehicleType} onChange={set("vehicleType")} placeholder="Noah, Hiace, private car" />
               </Field>

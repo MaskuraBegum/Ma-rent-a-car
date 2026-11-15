@@ -35,8 +35,17 @@ const syncUnit = async (trip) => {
   return null;
 };
 
-// checks driver/car/vendor exist and fills in snapshots. Returns an error string or null
+// Checks driver/car/vendor exist, keeps own/rent tidy, fills snapshots. Returns an error string or null
 const applyRefs = async (trip, body) => {
+  if (body.vehicleSource === "own") {
+    trip.vendor = null; // a company car has no vendor
+    trip.vendorCarNo = undefined;
+  }
+  if (body.vehicleSource === "rent") {
+    if (!body.driver) trip.driver = null; // the vendor's driver is typed, not picked
+    if (!body.car) trip.car = null;
+  }
+
   if (body.driver) {
     const d = await Driver.findById(body.driver);
     if (!d) return "Driver not found";
@@ -46,7 +55,7 @@ const applyRefs = async (trip, body) => {
   if (body.car) {
     const c = await Car.findById(body.car);
     if (!c) return "Car not found";
-    if (!body.vendor && c.vendor) trip.vendor = c.vendor; // vendor's car -> vendor trip
+    if (!body.vendor && c.vendor && body.vehicleSource !== "own") trip.vendor = c.vendor; // vendor's car -> vendor trip
     if (!trip.vehicleType) trip.vehicleType = `${c.companyName} ${c.model}`;
   }
   if (body.vendor && !(await Vendor.exists({ _id: body.vendor }))) return "Vendor not found";
@@ -55,17 +64,17 @@ const applyRefs = async (trip, body) => {
 
 // who gets the message: passenger number, else the unit, else the client
 const whatsappFor = async (trip) => {
-    let to = trip.passengerPhone;
-    if (!to && trip.client) {
-      const c = await Client.findById(trip.client);
-      to = c?.units.id(trip.unitId)?.phone || c?.phone;
-    }
-    if (!to) return null;
-  
-    const carId = trip.car?._id || trip.car;
-    const car = carId ? await Car.findById(carId) : null;
-    return buildWhatsApp(to, trip, car);
-  };
+  let to = trip.passengerPhone;
+  if (!to && trip.client) {
+    const c = await Client.findById(trip.client);
+    to = c?.units.id(trip.unitId)?.phone || c?.phone;
+  }
+  if (!to) return null;
+
+  const carId = trip.car?._id || trip.car;
+  const car = carId ? await Car.findById(carId) : null;
+  return buildWhatsApp(to, trip, car);
+};
 
 export const listTrips = async (req, res) => {
   const { status, from, to, client, driver, search, sort, page = 1, limit = 50 } = req.query;
@@ -80,7 +89,7 @@ export const listTrips = async (req, res) => {
   if (driver) filter.driver = driver;
   if (search) {
     const rx = new RegExp(escapeRegex(String(search)), "i");
-    filter.$or = ["location", "passengerName", "passengerPhone", "driverName"].map((f) => ({ [f]: rx }));
+    filter.$or = ["location", "passengerName", "passengerPhone", "driverName", "chalanNo", "vendorCarNo"].map((f) => ({ [f]: rx }));
   }
 
   const p = Math.max(Number(page) || 1, 1);
@@ -124,10 +133,19 @@ export const assignTrip = async (req, res) => {
   if (!["requested", "assigned", "sent"].includes(trip.status)) {
     return bad(res, `Cannot assign a ${trip.status} trip`);
   }
-  // an assignment replaces the previous car/vendor; sending the form again re-assigns
-  trip.set({ car: undefined, vendor: undefined, ...req.body });
+  // an assignment replaces the previous vehicle and driver; sending the form again re-assigns
+  trip.set({
+    car: undefined,
+    vendor: undefined,
+    driver: undefined,
+    vendorCarNo: undefined,
+    driverName: undefined,
+    driverPhone: undefined,
+    ...req.body,
+  });
   const err = await applyRefs(trip, req.body);
   if (err) return bad(res, err);
+  if (!trip.driver && !trip.driverName) return bad(res, "Choose a driver or type the driver's name");
   trip.setStatus("assigned");
   await trip.save();
   res.json({ trip: await trip.populate(POP), whatsapp: await whatsappFor(trip) });

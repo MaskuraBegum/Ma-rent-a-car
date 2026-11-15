@@ -1,15 +1,68 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { api } from "../api.js";
 
-const links = [
-  { to: "/", label: "Trips", end: true, badge: true },
-  { to: "/trips/new", label: "New trip" },
-  { to: "/drivers", label: "Drivers" },
-  { to: "/vendors", label: "Vendors" },
-  { to: "/cars", label: "Cars" },
-  { to: "/clients", label: "Clients" },
+// Left menu: groups open and close. A group with only "to" is a single link.
+const NAV = [
+  {
+    label: "Trips", bn: "ট্রিপ",
+    items: [
+      { to: "/", label: "Trip list", bn: "ট্রিপ তালিকা", end: true, badge: true },
+      { to: "/trips/new", label: "New trip", bn: "নতুন ট্রিপ" },
+    ],
+  },
+  {
+    label: "Client", bn: "ক্লায়েন্ট",
+    items: [
+      { to: "/invoices/client/new", label: "New invoice", bn: "ইনভয়েস" },
+      { to: "/invoices/client", label: "Invoice list", bn: "তালিকা", end: true },
+      { to: "/statements/client", label: "Statement", bn: "বিবরণী" },
+      { to: "/clients", label: "Clients", bn: "ক্লায়েন্ট তালিকা" },
+    ],
+  },
+  {
+    label: "Supplier", bn: "সরবরাহকারী",
+    items: [
+      { to: "/invoices/vendor/new", label: "New bill", bn: "বিল" },
+      { to: "/invoices/vendor", label: "Bill list", bn: "তালিকা", end: true },
+      { to: "/statements/vendor", label: "Statement", bn: "বিবরণী" },
+      { to: "/vendors", label: "Vendors", bn: "সরবরাহকারী তালিকা" },
+    ],
+  },
+  {
+    label: "Fleet", bn: "ফ্লিট",
+    items: [
+      { to: "/cars", label: "Vehicles", bn: "যানবাহন" },
+      { to: "/drivers", label: "Drivers", bn: "চালক" },
+    ],
+  },
+  {
+    label: "Maintenance", bn: "মেইনটেন্যান্স",
+    items: [
+      { to: "/maintenance/new", label: "New log", bn: "নতুন লগ" },
+      { to: "/maintenance", label: "Log list", bn: "লগ তালিকা", end: true },
+    ],
+  },
+  { label: "Expenses", bn: "খরচ", to: "/expenses" },
+  { label: "Report", bn: "রিপোর্ট", to: "/reports" },
 ];
+
+const DHAKA = "Asia/Dhaka";
+const clock = (d) => {
+  const date = d.toLocaleDateString("en-GB", { timeZone: DHAKA, day: "2-digit", month: "2-digit", year: "numeric" });
+  const day = d.toLocaleDateString("en-US", { timeZone: DHAKA, weekday: "short" }).toUpperCase();
+  const time = d.toLocaleTimeString("en-GB", { timeZone: DHAKA, hour12: false });
+  return `${date} ${day} - ${time}`;
+};
+
+function useClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
 
 function beep() {
   try {
@@ -68,35 +121,93 @@ function useNewRequests() {
   return count;
 }
 
+const groupHas = (g, path) => g.items?.some((i) => path === i.to || (i.to !== "/" && path.startsWith(i.to)));
+
 export default function Layout() {
   const count = useNewRequests();
+  const now = useClock();
+  const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(() => window.innerWidth >= 768);
+  const [open, setOpen] = useState(() => new Set(NAV.filter((g) => groupHas(g, pathname)).map((g) => g.label)));
   const [perm, setPerm] = useState("Notification" in window ? Notification.permission : "denied");
 
+  // the group of the page you are on stays open; on a phone the menu closes after choosing
+  useEffect(() => {
+    const g = NAV.find((x) => groupHas(x, pathname));
+    if (g) setOpen((s) => (s.has(g.label) ? s : new Set(s).add(g.label)));
+    if (window.innerWidth < 768) setMenuOpen(false);
+  }, [pathname]);
+
+  const toggle = (label) =>
+    setOpen((s) => {
+      const next = new Set(s);
+      next.has(label) ? next.delete(label) : next.add(label);
+      return next;
+    });
+
   const linkCls = ({ isActive }) =>
-    `flex items-center justify-between gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${
-      isActive ? "bg-emerald-700 text-white" : "text-slate-700 hover:bg-slate-100"
+    `flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${
+      isActive ? "bg-emerald-700 font-medium text-white" : "text-slate-700 hover:bg-slate-100"
     }`;
-
-  const items = links.map((l) => (
-    <NavLink key={l.to} to={l.to} end={l.end} className={linkCls}>
-      {l.label}
-      {l.badge && count > 0 && <span className="rounded-full bg-red-600 px-2 text-xs text-white">{count}</span>}
-    </NavLink>
-  ));
-
-  const enableAlerts = async () => setPerm(await Notification.requestPermission());
 
   return (
     <div className="min-h-screen md:flex">
-      <aside className="hidden w-56 shrink-0 flex-col gap-1 border-r border-slate-200 bg-white p-4 md:flex">
-        <p className="mb-4 text-lg font-semibold leading-tight text-emerald-800">Maa Rent a Car</p>
-        {items}
+      {menuOpen && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMenuOpen(false)} />}
+
+      <aside
+        className={`${
+          menuOpen ? "flex" : "hidden"
+        } fixed inset-y-0 left-0 z-40 w-64 flex-col overflow-y-auto border-r border-slate-200 bg-white p-3 md:sticky md:top-0 md:h-screen md:shrink-0`}
+      >
+        <p className="px-2 pb-1 pt-1 text-lg font-semibold leading-tight text-emerald-800">Maa Rent a Car</p>
+        <p className="mb-3 px-2 text-xs text-slate-500">পরিবহন হিসাব</p>
+
+        <nav className="space-y-1">
+          {NAV.map((g) =>
+            g.to ? (
+              <NavLink key={g.label} to={g.to} className={linkCls}>
+                <span>
+                  {g.label} <span className="text-xs opacity-70">({g.bn})</span>
+                </span>
+              </NavLink>
+            ) : (
+              <div key={g.label}>
+                <button
+                  type="button"
+                  onClick={() => toggle(g.label)}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-slate-100 ${
+                    groupHas(g, pathname) ? "text-emerald-800" : "text-slate-700"
+                  }`}
+                  aria-expanded={open.has(g.label)}
+                >
+                  <span>
+                    {g.label} <span className="text-xs font-normal opacity-70">({g.bn})</span>
+                  </span>
+                  <span className={`text-slate-400 transition ${open.has(g.label) ? "rotate-180" : ""}`}>▾</span>
+                </button>
+                {open.has(g.label) && (
+                  <div className="ml-3 mt-1 space-y-1 border-l border-slate-200 pl-2">
+                    {g.items.map((i) => (
+                      <NavLink key={i.to} to={i.to} end={i.end} className={linkCls}>
+                        <span>
+                          {i.label} <span className="text-xs opacity-70">({i.bn})</span>
+                        </span>
+                        {i.badge && count > 0 && <span className="rounded-full bg-red-600 px-2 text-xs text-white">{count}</span>}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          )}
+        </nav>
+
         <div className="mt-auto space-y-2 pt-4 text-sm">
           <a href="/book" target="_blank" rel="noreferrer" className="block text-emerald-700 hover:underline">
             Open customer booking form
           </a>
           {perm === "default" && (
-            <button onClick={enableAlerts} className="text-left text-slate-500 hover:underline">
+            <button onClick={async () => setPerm(await Notification.requestPermission())} className="text-left text-slate-500 hover:underline">
               Turn on alerts for new requests
             </button>
           )}
@@ -104,14 +215,21 @@ export default function Layout() {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white md:hidden">
-          <div className="flex items-center justify-between px-4 pt-3">
-            <p className="font-semibold text-emerald-800">Maa Rent a Car</p>
-            <a href="/book" target="_blank" rel="noreferrer" className="text-xs text-emerald-700">
-              Booking form
-            </a>
-          </div>
-          <nav className="flex gap-1 overflow-x-auto px-3 py-2">{items}</nav>
+        <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-lg leading-none text-slate-600 hover:bg-slate-50"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+          >
+            ☰
+          </button>
+          <p className="font-semibold text-emerald-800">Maa Rent a Car</p>
+          <span className="ml-auto hidden text-sm tabular-nums text-slate-600 sm:inline">{clock(now)}</span>
+          <Link to="/" className="relative rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50" title="New booking requests">
+            Requests
+            {count > 0 && <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-1.5 text-xs text-white">{count}</span>}
+          </Link>
         </header>
         <main className="mx-auto max-w-6xl p-4 md:p-6">
           <Outlet />

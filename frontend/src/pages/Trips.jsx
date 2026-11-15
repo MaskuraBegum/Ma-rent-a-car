@@ -58,14 +58,19 @@ function TripCard({ t, onAssign, onWhatsApp, onStatus }) {
       <p className="mt-2 font-medium">{t.location}</p>
       <p className="text-sm text-slate-500">
         {fmtDate(t.date)}
+        {t.dropDate && ` to ${fmtDate(t.dropDate)}`}
         {t.startTime && ` · ${t.startTime}${t.finishTime ? ` to ${t.finishTime}` : ""}`}
         {t.totalHours ? ` (${t.totalHours} h)` : ""}
+        {t.chalanNo && ` · Chalan ${t.chalanNo}`}
       </p>
 
       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
         <Info label="Client" value={clientLine || "Not linked"} warn={!t.client} />
         <Info label="User" value={[t.passengerName, fmtPhone(t.passengerPhone)].filter(Boolean).join(" · ") || "-"} />
-        <Info label="Car" value={`${t.vehicleType || "-"}${t.vendor ? ` (Vendor: ${t.vendor.name})` : ""}`} />
+        <Info
+          label={t.vehicleSource === "rent" ? "Rented car" : "Car"}
+          value={`${[t.vehicleType, t.vendorCarNo].filter(Boolean).join(" · ") || "-"}${t.vendor ? ` (Vendor: ${t.vendor.name})` : ""}`}
+        />
         <Info
           label="Driver"
           value={t.driverName ? `${t.driverName}${t.driverPhone ? ` · ${fmtPhone(t.driverPhone)}` : ""}` : "Not assigned"}
