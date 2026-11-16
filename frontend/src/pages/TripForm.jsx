@@ -7,6 +7,8 @@ import VehicleFields, { vehiclePayload, vehicleState } from "../components/Vehic
 import { useToast } from "../components/Toast.jsx";
 import { useLookups } from "../hooks.js";
 import { clientOptions, clientValue, dhakaToday, fmtPhone, splitClient, taka, toDateInput } from "../utils.js";
+import PayoutField from "../components/PayoutField.jsx";
+
 
 const NUMBERS = ["totalKm", "rent", "ownerAmount", "others"];
 const MONEY = ["rent", "ownerAmount", "others"];
@@ -250,9 +252,13 @@ export default function TripForm() {
         <Field label="Rent (৳)">
           <input type="number" min="0" className={inputCls} value={v.rent} onChange={set("rent")} />
         </Field>
-        <Field label="Owner / vendor amount (৳)" hint="The share paid to the car owner, vendor or driver">
-          <input type="number" min="0" className={inputCls} value={v.ownerAmount} onChange={set("ownerAmount")} />
-        </Field>
+        <PayoutField
+          source={showVehicle ? v.vehicleSource : undefined}
+          rent={v.rent}
+          value={v.ownerAmount}
+          onChange={(x) => setVal("ownerAmount", x)}
+          hasDriver={!!v.driver}
+        />
         <Field label="Others (৳)">
           <input type="number" min="0" className={inputCls} value={v.others} onChange={set("others")} />
         </Field>

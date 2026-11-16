@@ -15,6 +15,8 @@ import InvoiceView from "./pages/InvoiceView.jsx";
 import Statement from "./pages/Statement.jsx";
 import MaintenanceForm from "./pages/MaintenanceForm.jsx";
 import MaintenanceList from "./pages/MaintenanceList.jsx";
+import LedgerBalances from "./pages/LedgerBalances.jsx";
+import LedgerParty from "./pages/LedgerParty.jsx";
 
 export default function App() {
   return (
@@ -41,6 +43,8 @@ export default function App() {
         <Route path="maintenance/new" element={<MaintenanceForm />} />
         <Route path="maintenance/:id/edit" element={<MaintenanceForm />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="ledger/:type" element={<LedgerBalances />} />
+        <Route path="ledger/:type/:id" element={<LedgerParty />} />
       </Route>
     </Routes>
   );

@@ -4,6 +4,7 @@ import { Button, Field, inputCls, Modal } from "../components/ui.jsx";
 import VehicleFields, { vehiclePayload, vehicleState } from "../components/VehicleFields.jsx";
 import { useToast } from "../components/Toast.jsx";
 import { clientOptions, clientValue, fmtDate, splitClient, taka } from "../utils.js";
+import PayoutField from "../components/PayoutField.jsx";
 
 export default function AssignModal({ trip, lookups, onClose, onDone }) {
   const toast = useToast();
@@ -62,9 +63,7 @@ export default function AssignModal({ trip, lookups, onClose, onDone }) {
           <Field label="Rent (৳)">
             <input type="number" min="0" className={inputCls} value={f.rent} onChange={(e) => set("rent", e.target.value)} />
           </Field>
-          <Field label="Owner / vendor amount (৳)">
-            <input type="number" min="0" className={inputCls} value={f.ownerAmount} onChange={(e) => set("ownerAmount", e.target.value)} />
-          </Field>
+          <PayoutField source={f.vehicleSource} rent={f.rent} value={f.ownerAmount} onChange={(x) => set("ownerAmount", x)} hasDriver={!!f.driver} />
         </div>
         <p className={`text-sm ${office < 0 ? "text-red-600" : "text-slate-600"}`}>
           {office < 0 ? "Owner amount cannot be more than the rent." : `Office share: ${taka(office)}`}

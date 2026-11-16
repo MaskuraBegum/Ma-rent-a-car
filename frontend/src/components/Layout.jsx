@@ -45,6 +45,13 @@ const NAV = [
   },
   { label: "Expenses", bn: "খরচ", to: "/expenses" },
   { label: "Report", bn: "রিপোর্ট", to: "/reports" },
+  {
+    label: "Accounts", bn: "হিসাব",
+    items: [
+      { to: "/ledger/driver", label: "Driver dues", bn: "চালকের পাওনা" },
+      { to: "/ledger/vendor", label: "Vendor dues", bn: "ভেন্ডরের পাওনা" },
+    ],
+  },
 ];
 
 const DHAKA = "Asia/Dhaka";

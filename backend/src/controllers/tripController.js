@@ -4,6 +4,7 @@ import Driver from "../models/Driver.js";
 import Car from "../models/Car.js";
 import Vendor from "../models/Vendor.js";
 import { buildWhatsApp } from "../services/whatsappService.js";
+import { syncTripLedger } from "../services/ledgerService.js";
 
 const POP = [
   { path: "client", select: "name type" },
@@ -114,6 +115,7 @@ export const createTrip = async (req, res) => {
   const err = await applyRefs(trip, req.body);
   if (err) return bad(res, err);
   await trip.save();
+  await syncTripLedger(trip);
   res.status(201).json(await trip.populate(POP));
 };
 
@@ -124,6 +126,7 @@ export const updateTrip = async (req, res) => {
   const err = await applyRefs(trip, req.body);
   if (err) return bad(res, err);
   await trip.save();
+  await syncTripLedger(trip);
   res.json(await trip.populate(POP));
 };
 
@@ -160,6 +163,7 @@ export const changeStatus = async (req, res) => {
   }
   trip.setStatus(status);
   await trip.save();
+  await syncTripLedger(trip);
   res.json(await trip.populate(POP));
 };
 
