@@ -4,6 +4,7 @@ import { api } from "../api.js";
 
 // Left menu: groups open and close. A group with only "to" is a single link.
 const NAV = [
+  { label: "Dashboard", bn: "ড্যাশবোর্ড", to: "/dashboard" },
   {
     label: "Trips", bn: "ট্রিপ",
     items: [

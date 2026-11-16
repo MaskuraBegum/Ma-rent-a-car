@@ -1,5 +1,3 @@
-// A driver gets at most this % of the rent for a trip (the usual limit). It only warns, it never blocks.
-export const DRIVER_PAY_MAX_PERCENT = 80;
 
 export const LEDGER = {
   driver: { word: "Driver", bn: "চালক", plural: "Drivers", dues: "Driver dues", duesBn: "চালকের পাওনা" },

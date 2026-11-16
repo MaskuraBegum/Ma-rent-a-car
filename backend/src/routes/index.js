@@ -17,6 +17,8 @@ import reportsRouter from "./reports.js";
 import invoicesRouter from "./invoices.js";
 import maintenanceRouter from "./maintenance.js";
 import ledgerRouter from "./ledger.js";
+import dashboardRouter from "./dashboard.js";     
+      
 
 const router = Router();
 
@@ -58,5 +60,6 @@ router.use("/reports", reportsRouter);
 router.use("/invoices", invoicesRouter); // client invoices and vendor (supplier) bills
 router.use("/maintenance", maintenanceRouter);
 router.use("/ledger", ledgerRouter)
+router.use("/dashboard", dashboardRouter); 
 
 export default router;
