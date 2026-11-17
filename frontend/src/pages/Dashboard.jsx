@@ -32,10 +32,10 @@ const ACCENT = {
   slate: { bar: "bg-slate-400", text: "text-slate-700", soft: "bg-slate-50" },
 };
 
-function StatCard({ label, bn, value, note, tone = "green", children }) {
+function StatCard({ label, bn, value, note, tone = "green", children, className = "" }) {
   const a = ACCENT[tone];
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className={`relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
       <span className={`absolute inset-y-0 left-0 w-1 ${a.bar}`} />
       <p className="text-xs font-medium text-slate-500">
         {label} <span className="opacity-70">({bn})</span>
@@ -47,7 +47,7 @@ function StatCard({ label, bn, value, note, tone = "green", children }) {
   );
 }
 
-function MiniCard({ label, bn, value, note, tone = "slate", to }) {
+function MiniCard({ label, bn, value, note, tone = "slate", to, className = "" }) {
   const a = ACCENT[tone];
   const body = (
     <div className="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:border-slate-300">
@@ -59,7 +59,7 @@ function MiniCard({ label, bn, value, note, tone = "slate", to }) {
       {note && <p className="mt-0.5 text-xs text-slate-500">{note}</p>}
     </div>
   );
-  return to ? <Link to={to}>{body}</Link> : body;
+  return to ? <Link to={to} className={className}>{body}</Link> : <div className={className}>{body}</div>;
 }
 
 // a thin bar split in parts, with a legend underneath
@@ -282,11 +282,11 @@ export default function Dashboard() {
         <p className="text-sm text-slate-500">পরিবহন হিসাব · overview of money and trips</p>
       </div>
 
-      {/* first 9 cards - responsive 4 column layout */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Receivable" bn="মোট পাওনা" tone="green" value={taka(c.receivable.total)} note={`${c.receivable.count} open invoice${c.receivable.count === 1 ? "" : "s"}`} />
+      {/* first 9 cards - 4 on row 1, 5 on row 2 (desktop) */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6 lg:grid-cols-20">
+        <StatCard className="col-span-2 md:col-span-3 lg:col-span-5" label="Total Receivable" bn="মোট পাওনা" tone="green" value={taka(c.receivable.total)} note={`${c.receivable.count} open invoice${c.receivable.count === 1 ? "" : "s"}`} />
 
-        <StatCard label="Total Payable" bn="মোট দেনা" tone="red" value={taka(c.payable.total)} note={`${c.payable.count} open bill${c.payable.count === 1 ? "" : "s"}`}>
+        <StatCard className="col-span-2 md:col-span-3 lg:col-span-5" label="Total Payable" bn="মোট দেনা" tone="red" value={taka(c.payable.total)} note={`${c.payable.count} open bill${c.payable.count === 1 ? "" : "s"}`}>
           <SplitBar
             parts={[
               { label: "Bills", value: c.payable.bills, color: "bg-red-500" },
@@ -296,9 +296,9 @@ export default function Dashboard() {
           />
         </StatCard>
 
-        <StatCard label="Cash Balance" bn="নগদ ব্যালেন্স" tone="blue" value={taka(c.cash)} note="Received minus all payments and expenses" />
+        <StatCard className="col-span-2 md:col-span-3 lg:col-span-5" label="Cash Balance" bn="নগদ ব্যালেন্স" tone="blue" value={taka(c.cash)} note="Received minus all payments and expenses" />
 
-        <StatCard label="Net Position" bn="নেট অবস্থা" tone={netTone} value={taka(c.net)} note="Cash + receivable − payable">
+        <StatCard className="col-span-2 md:col-span-3 lg:col-span-5" label="Net Position" bn="নেট অবস্থা" tone={netTone} value={taka(c.net)} note="Cash + receivable − payable">
           <SplitBar
             parts={[
               { label: "Receivable", value: c.receivable.total, color: "bg-emerald-500" },
@@ -307,15 +307,28 @@ export default function Dashboard() {
           />
         </StatCard>
 
-        <MiniCard to="/" label="Active Trips" bn="চলমান ট্রিপ" tone="blue" value={c.activeTrips} note={c.newRequests ? `${c.newRequests} new request${c.newRequests === 1 ? "" : "s"}` : "Assigned or sent"} />
+        <MiniCard
+          className="col-span-1 md:col-span-2 lg:col-span-4"
+          to="/"
+          label="Active Trips"
+          bn="চলমান ট্রিপ"
+          tone="blue"
+          value={c.activeTrips}
+          note={
+            <span className="flex flex-wrap gap-x-2">
+              <span className="text-emerald-700">{c.completedTrips} completed</span>
+              <span className="text-sky-700">{c.upcomingTrips} upcoming</span>
+            </span>
+          }
+        />
 
-        <MiniCard to="/maintenance" label="Pending Maintenance" bn="মেইনটেন্যান্স" tone="amber" value={c.pendingMaintenance} note="Pending or in progress" />
+        <MiniCard className="col-span-1 md:col-span-2 lg:col-span-4" to="/maintenance" label="Pending Maintenance" bn="মেইনটেন্যান্স" tone="amber" value={c.pendingMaintenance} note="Pending or in progress" />
 
-        <MiniCard label="This Month Income" bn="এই মাসের আয়" tone="green" value={taka(c.monthIncome)} note="Payments received" />
+        <MiniCard className="col-span-1 md:col-span-2 lg:col-span-4" label="This Month Income" bn="এই মাসের আয়" tone="green" value={taka(c.monthIncome)} note="Payments received" />
 
-        <MiniCard to="/expenses" label="This Month Expense" bn="এই মাসের খরচ" tone="red" value={taka(c.monthExpense)} note="All expenses" />
+        <MiniCard className="col-span-1 md:col-span-3 lg:col-span-4" to="/expenses" label="This Month Expense" bn="এই মাসের খরচ" tone="red" value={taka(c.monthExpense)} note="All expenses" />
 
-        <MiniCard to="/invoices/client" label="Overdue Invoices" bn="বকেয়া ইনভয়েস" tone={c.overdueInvoices ? "red" : "slate"} value={c.overdueInvoices} note="Past the payment date" />
+        <MiniCard className="col-span-2 md:col-span-3 lg:col-span-4" to="/invoices/client" label="Overdue Invoices" bn="বকেয়া ইনভয়েস" tone={c.overdueInvoices ? "red" : "slate"} value={c.overdueInvoices} note="Past the payment date" />
       </div>
 
       {/* charts */}

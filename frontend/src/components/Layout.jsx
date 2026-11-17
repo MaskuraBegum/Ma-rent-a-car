@@ -22,6 +22,13 @@ const NAV = [
     ],
   },
   {
+    label: "Purchase", bn: "ক্রয়",
+    items: [
+      { to: "/purchases/new", label: "New purchase", bn: "নতুন ক্রয়" },
+      { to: "/purchases", label: "Purchase list", bn: "ক্রয় তালিকা", end: true },
+    ],
+  },
+  {
     label: "Supplier", bn: "সরবরাহকারী",
     items: [
       { to: "/invoices/vendor/new", label: "New bill", bn: "বিল" },

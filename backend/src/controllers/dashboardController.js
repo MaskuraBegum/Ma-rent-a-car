@@ -1,3 +1,4 @@
+
 import Invoice from "../models/Invoice.js";
 import Trip from "../models/Trip.js";
 import Expense, { EXPENSE_CATEGORIES } from "../models/Expense.js";
@@ -24,8 +25,8 @@ export const dashboard = async (req, res) => {
   const months = lastMonths(6);
   const thisMonth = months[months.length - 1];
   const since = new Date(`${months[0]}-01T00:00:00+06:00`);
-  const todayStart = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: DHAKA })}T00:00:00+06:00`);
-  const byMonth = { $dateToString: { format: "%Y-%m", date: "$date", timezone: DHAKA } };
+  const todayStart = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: DHAKU })}T00:00:00+06:00`);
+  const byMonth = { $dateToString: { format: "%Y-%m", date: "$date", timezone: DHAKU } };
 
   // a maintenance cost that was paid through a supplier bill is already in the bill's payments
   const billed = await MaintenanceLog.find({ supplierBill: { $ne: null }, expense: { $ne: null } }).select("expense").lean();
@@ -39,6 +40,7 @@ export const dashboard = async (req, res) => {
     incomeByMonth, expenseByMonth, expenseByCategory,
     payableList, receivableList,
     payIn, payOut, ledgerPays, expenseList,
+    completedMonth, upcoming,
   ] = await Promise.all([
     Invoice.aggregate([{ $match: { type: "client", status: { $in: OPEN }, balance: { $gt: 0 } } }, { $group: { _id: null, total: { $sum: "$balance" }, count: { $sum: 1 } } }]),
     Invoice.aggregate([{ $match: { type: "vendor", status: { $in: OPEN }, balance: { $gt: 0 } } }, { $group: { _id: null, total: { $sum: "$balance" }, count: { $sum: 1 } } }]),
@@ -73,6 +75,9 @@ export const dashboard = async (req, res) => {
     Invoice.aggregate([{ $match: { type: "vendor" } }, { $unwind: "$payments" }, { $sort: { "payments.date": -1 } }, { $limit: 8 }, { $project: { invoiceNo: 1, name: "$billTo.name", amount: "$payments.amount", date: "$payments.date", method: "$payments.method" } }]),
     LedgerEntry.find({ kind: "payment" }).sort({ date: -1 }).limit(8).populate("driver", "name").populate("vendor", "name").lean(),
     Expense.find({ isActive: true }).sort({ date: -1, createdAt: -1 }).limit(6).populate("car", "companyName model registrationNo").select("date category amount description car").lean(),
+
+    Trip.countDocuments({ status: "completed", date: { $gte: new Date(`${thisMonth}-01T00:00:00+06:00`) } }),
+    Trip.countDocuments({ status: { $in: ["assigned", "sent"] }, date: { $gte: todayStart } }),
   ]);
 
   const recv = receivable[0]?.total || 0;
@@ -105,6 +110,8 @@ export const dashboard = async (req, res) => {
       net: round2(cash + recv - pay),
       activeTrips: (status.assigned || 0) + (status.sent || 0),
       newRequests: status.requested || 0,
+      completedTrips: completedMonth,
+      upcomingTrips: upcoming,
       pendingMaintenance: pendingMaint,
       monthIncome: now.income,
       monthExpense: now.expense,

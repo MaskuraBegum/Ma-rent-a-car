@@ -18,6 +18,9 @@ import MaintenanceList from "./pages/MaintenanceList.jsx";
 import LedgerBalances from "./pages/LedgerBalances.jsx";
 import LedgerParty from "./pages/LedgerParty.jsx";
 import Dashboard from "./pages/Dashboard.jsx";   
+import PurchaseForm from "./pages/PurchaseForm.jsx";
+import PurchaseList from "./pages/PurchaseList.jsx";
+import PurchaseView from "./pages/PurchaseView.jsx";
 
 export default function App() {
   return (
@@ -47,6 +50,10 @@ export default function App() {
         <Route path="ledger/:type" element={<LedgerBalances />} />
         <Route path="ledger/:type/:id" element={<LedgerParty />} />
         <Route path="dashboard" element={<Dashboard />} /> 
+        <Route path="purchases" element={<PurchaseList />} />
+        <Route path="purchases/new" element={<PurchaseForm />} />
+        <Route path="purchases/:id" element={<PurchaseView />} />
+        <Route path="purchases/:id/edit" element={<PurchaseForm />} />
       </Route>
     </Routes>
   );
