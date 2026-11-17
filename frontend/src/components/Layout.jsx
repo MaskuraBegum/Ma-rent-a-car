@@ -29,6 +29,15 @@ const NAV = [
     ],
   },
   {
+    label: "Inventory", bn: "ইনভেন্টরি",
+    items: [
+      { to: "/inventory/items", label: "Stock items", bn: "আইটেম", end: true },
+      { to: "/inventory/items/new", label: "Add item", bn: "নতুন আইটেম" },
+      { to: "/inventory/categories", label: "Categories", bn: "ক্যাটাগরি" },
+      { to: "/inventory/units", label: "Units", bn: "একক" },
+    ],
+  },
+  {
     label: "Supplier", bn: "সরবরাহকারী",
     items: [
       { to: "/invoices/vendor/new", label: "New bill", bn: "বিল" },

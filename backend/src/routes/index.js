@@ -19,6 +19,8 @@ import maintenanceRouter from "./maintenance.js";
 import ledgerRouter from "./ledger.js";
 import dashboardRouter from "./dashboard.js";   
 import purchasesRouter from "./purchases.js";   
+import inventoryRouter from "./inventory.js";          
+
       
 
 const router = Router();
@@ -63,5 +65,6 @@ router.use("/maintenance", maintenanceRouter);
 router.use("/ledger", ledgerRouter)
 router.use("/dashboard", dashboardRouter); 
 router.use("/purchases", purchasesRouter);
+router.use("/inventory", inventoryRouter);
 
 export default router;

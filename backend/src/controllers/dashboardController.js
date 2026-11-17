@@ -1,4 +1,3 @@
-
 import Invoice from "../models/Invoice.js";
 import Trip from "../models/Trip.js";
 import Expense, { EXPENSE_CATEGORIES } from "../models/Expense.js";
@@ -25,8 +24,8 @@ export const dashboard = async (req, res) => {
   const months = lastMonths(6);
   const thisMonth = months[months.length - 1];
   const since = new Date(`${months[0]}-01T00:00:00+06:00`);
-  const todayStart = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: DHAKU })}T00:00:00+06:00`);
-  const byMonth = { $dateToString: { format: "%Y-%m", date: "$date", timezone: DHAKU } };
+  const todayStart = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: DHAKA })}T00:00:00+06:00`);
+  const byMonth = { $dateToString: { format: "%Y-%m", date: "$date", timezone: DHAKA } };
 
   // a maintenance cost that was paid through a supplier bill is already in the bill's payments
   const billed = await MaintenanceLog.find({ supplierBill: { $ne: null }, expense: { $ne: null } }).select("expense").lean();
