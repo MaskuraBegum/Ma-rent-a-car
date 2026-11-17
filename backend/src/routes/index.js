@@ -19,7 +19,10 @@ import maintenanceRouter from "./maintenance.js";
 import ledgerRouter from "./ledger.js";
 import dashboardRouter from "./dashboard.js";   
 import purchasesRouter from "./purchases.js";   
-import inventoryRouter from "./inventory.js";          
+import inventoryRouter from "./inventory.js";  
+import { staffSchema } from "../validators/staff.js";
+import Staff from "../models/Staff.js";     
+import transactionsRouter from "./transactions.js";   
 
       
 
@@ -57,6 +60,10 @@ router.use(
     expenseSchema
   )
 );
+router.use(
+  "/staff",
+  makeRouter(crudController(Staff, { searchFields: ["name", "phone", "designation"] }), staffSchema)
+);
 
 router.use("/trips", tripsRouter);
 router.use("/reports", reportsRouter);
@@ -66,5 +73,6 @@ router.use("/ledger", ledgerRouter)
 router.use("/dashboard", dashboardRouter); 
 router.use("/purchases", purchasesRouter);
 router.use("/inventory", inventoryRouter);
+router.use("/transactions", transactionsRouter);
 
 export default router;

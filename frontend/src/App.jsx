@@ -24,6 +24,9 @@ import PurchaseView from "./pages/PurchaseView.jsx";
 import InventoryItems from "./pages/InventoryItems.jsx";
 import InventoryItemForm from "./pages/InventoryItemForm.jsx";
 import InventoryLookup from "./pages/InventoryLookup.jsx";
+import Staff from "./pages/Staff.jsx";
+import Transactions from "./pages/Transactions.jsx";
+import TransactionAccounts from "./pages/TransactionAccounts.jsx";
 
 export default function App() {
   return (
@@ -62,6 +65,9 @@ export default function App() {
         <Route path="inventory/items/:id/edit" element={<InventoryItemForm />} />
         <Route path="inventory/categories" element={<InventoryLookup kind="categories" />} />
         <Route path="inventory/units" element={<InventoryLookup kind="units" />} />
+        <Route path="staff" element={<Staff />} />
+        <Route path="transactions" element={<Transactions />} />
+        <Route path="transactions/accounts" element={<TransactionAccounts />} />
       </Route>
     </Routes>
   );

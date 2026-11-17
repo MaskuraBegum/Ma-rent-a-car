@@ -60,6 +60,14 @@ const NAV = [
       { to: "/maintenance", label: "Log list", bn: "লগ তালিকা", end: true },
     ],
   },
+  {
+    label: "Transactions", bn: "লেনদেন",
+    items: [
+      { to: "/transactions", label: "Cash entry", bn: "নগদ লেনদেন", end: true },
+      { to: "/transactions/accounts", label: "Accounts", bn: "হিসাব" },
+    ],
+  },
+  { label: "Staff", bn: "স্টাফ", to: "/staff" },
   { label: "Expenses", bn: "খরচ", to: "/expenses" },
   { label: "Report", bn: "রিপোর্ট", to: "/reports" },
   {
