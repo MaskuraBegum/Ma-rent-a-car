@@ -10,22 +10,29 @@ export const options = (req, res) => res.json({ sources: IN_SOURCES, categories:
 
 // ---------- accounts ----------
 export async function balances() {
-  const [accounts, inn, out, from, to] = await Promise.all([
-    Account.find().sort({ createdAt: 1 }).lean(),
-    Transaction.aggregate([{ $match: { type: "in" } }, { $group: { _id: "$account", t: { $sum: "$amount" } } }]),
-    Transaction.aggregate([{ $match: { type: "out" } }, { $group: { _id: "$account", t: { $sum: "$amount" } } }]),
-    Transaction.aggregate([{ $match: { type: "transfer" } }, { $group: { _id: "$account", t: { $sum: "$amount" } } }]),
-    Transaction.aggregate([{ $match: { type: "transfer" } }, { $group: { _id: "$toAccount", t: { $sum: "$amount" } } }]),
-  ]);
-  const m = (rows) => new Map(rows.map((r) => [String(r._id), r.t]));
-  const [mi, mo, mf, mt] = [m(inn), m(out), m(from), m(to)];
-  return accounts.map((a) => {
-    const k = String(a._id);
-    const cashIn = (mi.get(k) || 0) + (mt.get(k) || 0);
-    const cashOut = (mo.get(k) || 0) + (mf.get(k) || 0);
-    return { ...a, cashIn: round2(cashIn), cashOut: round2(cashOut), balance: round2((a.openingBalance || 0) + cashIn - cashOut) };
-  });
-}
+    const [accounts, inn, out, from, to, lastA, lastB] = await Promise.all([
+      Account.find().sort({ createdAt: 1 }).lean(),
+      Transaction.aggregate([{ $match: { type: "in" } }, { $group: { _id: "$account", t: { $sum: "$amount" } } }]),
+      Transaction.aggregate([{ $match: { type: "out" } }, { $group: { _id: "$account", t: { $sum: "$amount" } } }]),
+      Transaction.aggregate([{ $match: { type: "transfer" } }, { $group: { _id: "$account", t: { $sum: "$amount" } } }]),
+      Transaction.aggregate([{ $match: { type: "transfer" } }, { $group: { _id: "$toAccount", t: { $sum: "$amount" } } }]),
+      Transaction.aggregate([{ $group: { _id: "$account", d: { $max: "$createdAt" } } }]),
+      Transaction.aggregate([{ $match: { type: "transfer" } }, { $group: { _id: "$toAccount", d: { $max: "$createdAt" } } }]),
+    ]);
+    const last = new Map();
+    for (const r of [...lastA, ...lastB]) {
+      const k = String(r._id);
+      if (!last.has(k) || last.get(k) < r.d) last.set(k, r.d);
+    }
+    const m = (rows) => new Map(rows.map((r) => [String(r._id), r.t]));
+    const [mi, mo, mf, mt] = [m(inn), m(out), m(from), m(to)];
+    return accounts.map((a) => {
+      const k = String(a._id);
+      const cashIn = (mi.get(k) || 0) + (mt.get(k) || 0);
+      const cashOut = (mo.get(k) || 0) + (mf.get(k) || 0);
+      return { ...a, cashIn: round2(cashIn), cashOut: round2(cashOut), balance: round2((a.openingBalance || 0) + cashIn - cashOut), lastTransactionAt: last.get(k) || null };
+    });
+  }
 
 export const listAccounts = async (req, res) => {
   const items = await balances();

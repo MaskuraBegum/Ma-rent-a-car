@@ -67,6 +67,13 @@ const NAV = [
       { to: "/transactions/accounts", label: "Accounts", bn: "হিসাব" },
     ],
   },
+  {
+    label: "Banking", bn: "ব্যাংকিং",
+    items: [
+      { to: "/banking", label: "Banking", bn: "ব্যাংকিং" },
+      { to: "/chart-of-accounts", label: "Chart of accounts", bn: "হিসাবের তালিকা" },
+    ],
+  },
   { label: "Staff", bn: "স্টাফ", to: "/staff" },
   { label: "Expenses", bn: "খরচ", to: "/expenses" },
   { label: "Report", bn: "রিপোর্ট", to: "/reports" },

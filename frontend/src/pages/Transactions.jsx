@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 import { Badge, Button, Empty, Field, inputCls } from "../components/ui.jsx";
 import { useToast } from "../components/Toast.jsx";
@@ -24,14 +24,15 @@ const blank = () => ({
 
 export default function Transactions() {
   const toast = useToast();
+  const presetAccount = useSearchParams()[0].get("account") || ""; // from Banking > Transaction
   const [tab, setTab] = useState("in");
   const [accounts, setAccounts] = useState([]);
   const [opts, setOpts] = useState({ sources: [], categories: [], methods: [] });
-  const [form, setForm] = useState(blank());
+  const [form, setForm] = useState(() => ({ ...blank(), account: presetAccount }));
   const [saving, setSaving] = useState(false);
   const [rows, setRows] = useState([]);
   const [totals, setTotals] = useState({ in: 0, out: 0, transfer: 0 });
-  const [filter, setFilter] = useState({ type: "", account: "", from: "", to: "", search: "" });
+  const [filter, setFilter] = useState({ type: "", account: presetAccount, from: "", to: "", search: "" });
   const [q, setQ] = useState("");
 
   useEffect(() => {

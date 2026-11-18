@@ -27,6 +27,8 @@ import InventoryLookup from "./pages/InventoryLookup.jsx";
 import Staff from "./pages/Staff.jsx";
 import Transactions from "./pages/Transactions.jsx";
 import TransactionAccounts from "./pages/TransactionAccounts.jsx";
+import Banking from "./pages/Banking.jsx";
+import ChartOfAccounts from "./pages/ChartOfAccounts.jsx";
 
 export default function App() {
   return (
@@ -68,6 +70,8 @@ export default function App() {
         <Route path="staff" element={<Staff />} />
         <Route path="transactions" element={<Transactions />} />
         <Route path="transactions/accounts" element={<TransactionAccounts />} />
+        <Route path="banking" element={<Banking />} />
+<Route path="chart-of-accounts" element={<ChartOfAccounts />} />
       </Route>
     </Routes>
   );

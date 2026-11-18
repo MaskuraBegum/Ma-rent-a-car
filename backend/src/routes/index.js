@@ -22,7 +22,8 @@ import purchasesRouter from "./purchases.js";
 import inventoryRouter from "./inventory.js";  
 import { staffSchema } from "../validators/staff.js";
 import Staff from "../models/Staff.js";     
-import transactionsRouter from "./transactions.js";   
+import transactionsRouter from "./transactions.js"; 
+import chartRouter from "./chart.js";  
 
       
 
@@ -74,5 +75,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/purchases", purchasesRouter);
 router.use("/inventory", inventoryRouter);
 router.use("/transactions", transactionsRouter);
+router.use("/chart", chartRouter);
 
 export default router;
