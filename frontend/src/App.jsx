@@ -29,6 +29,14 @@ import Transactions from "./pages/Transactions.jsx";
 import TransactionAccounts from "./pages/TransactionAccounts.jsx";
 import Banking from "./pages/Banking.jsx";
 import ChartOfAccounts from "./pages/ChartOfAccounts.jsx";
+import HrAttendance from "./pages/HrAttendance.jsx";
+import HrLeave from "./pages/HrLeave.jsx";
+import HrPayroll from "./pages/HrPayroll.jsx";
+import HrAdvance from "./pages/HrAdvance.jsx";
+import HrFines from "./pages/HrFines.jsx";
+import HrLeaveTypes from "./pages/HrLeaveTypes.jsx";
+import HrSalaryStructure from "./pages/HrSalaryStructure.jsx";
+import HrSettings from "./pages/HrSettings.jsx";
 
 export default function App() {
   return (
@@ -71,7 +79,15 @@ export default function App() {
         <Route path="transactions" element={<Transactions />} />
         <Route path="transactions/accounts" element={<TransactionAccounts />} />
         <Route path="banking" element={<Banking />} />
-<Route path="chart-of-accounts" element={<ChartOfAccounts />} />
+        <Route path="chart-of-accounts" element={<ChartOfAccounts />} />
+        <Route path="hr/attendance" element={<HrAttendance />} />
+        <Route path="hr/leave" element={<HrLeave />} />
+        <Route path="hr/payroll" element={<HrPayroll />} />
+        <Route path="hr/advance" element={<HrAdvance />} />
+        <Route path="hr/fines" element={<HrFines />} />
+        <Route path="hr/leave-types" element={<HrLeaveTypes />} />
+        <Route path="hr/salary-structure" element={<HrSalaryStructure />} />
+        <Route path="hr/settings" element={<HrSettings />} />
       </Route>
     </Routes>
   );
