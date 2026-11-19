@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 import { resolvePeriod } from "../services/reports/period.js";
 import { PENDING, REPORTS, runReport } from "../services/reports/index.js";
@@ -14,6 +15,7 @@ const querySchema = z.object({
   to: day.optional(),
   vehicle: id.optional(),
   customer: id.optional(),
+  account: id.optional(),
   format: z.enum(["json", "pdf"]).default("json"),
 });
 
@@ -40,7 +42,7 @@ export const generate = async (req, res) => {
     return res.status(400).json({ message: err.message });
   }
 
-  const report = await runReport(section, type, { range, vehicle: q.vehicle, customer: q.customer });
+  const report = await runReport(section, type, { range, vehicle: q.vehicle, customer: q.customer, account: q.account });
 
   if (q.format === "pdf") {
     const name = `${section}-${type}-${range.label}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-$/, "");

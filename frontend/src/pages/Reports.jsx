@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 import { Badge, Button, Field, inputCls } from "../components/ui.jsx";
@@ -10,11 +11,13 @@ const MONTHS = [
   ["May", "মে"], ["June", "জুন"], ["July", "জুলাই"], ["August", "আগস্ট"],
   ["September", "সেপ্টেম্বর"], ["October", "অক্টোবর"], ["November", "নভেম্বর"], ["December", "ডিসেম্বর"],
 ];
+
 const FREQUENCIES = [
   { value: "monthly", label: "Monthly (মাসিক)" },
   { value: "yearly", label: "Yearly (বাৎসরিক)" },
   { value: "range", label: "Date range (তারিখ অনুযায়ী)" },
 ];
+
 const OUTPUTS = [
   { value: "fast", label: "Fast - show on screen (দ্রুত)" },
   { value: "pdf", label: "PDF - download" },
@@ -31,18 +34,23 @@ const SECTIONS = [
   { id: "expense", no: 4, title: "Expense Report", bn: "খরচ রিপোর্ট", filter: "vehicle",
     types: [{ value: "vehicle_expense", label: "Vehicle-wise Expense - F1", bn: "যানবাহন অনুযায়ী খরচ - ফ১" }] },
   { id: "purchase", no: 5, title: "Purchase Report", bn: "ক্রয় রিপোর্ট",
-    pending: "Needs a Purchases module (shop bills and payments). Not built yet.",
-    types: [{ value: "purchase_summary", label: "Purchase Summary - F1", bn: "ক্রয় সারসংক্ষেপ - ফ১" }] },
+    types: [
+      { value: "purchase_summary", label: "Purchase Summary - F1", bn: "ক্রয় সারসংক্ষেপ - ফ১" },
+      { value: "purchase_items", label: "Item-wise Purchase - F2", bn: "আইটেম অনুযায়ী ক্রয় - ফ২" },
+    ] },
   { id: "inventory", no: 6, title: "Inventory Report", bn: "ইনভেন্টরি রিপোর্ট",
-    pending: "Needs an Inventory module (parts and stock). Not built yet.",
-    types: [{ value: "stock_status", label: "Stock Status - F1", bn: "স্টক অবস্থা - ফ১" }] },
+    types: [
+      { value: "stock_status", label: "Stock Status - F1", bn: "স্টক অবস্থা - ফ১" },
+      { value: "low_stock", label: "Low Stock - F2", bn: "কম স্টক - ফ২" },
+    ] },
   { id: "maintenance", no: 7, title: "Maintenance Report", bn: "মেইনটেন্যান্স রিপোর্ট", filter: "vehicle",
     types: [{ value: "vehicle_maintenance", label: "Vehicle-wise Maintenance - F1", bn: "যানবাহন অনুযায়ী মেইনটেন্যান্স - ফ১" }] },
   { id: "accounting", no: 8, title: "Accounting Report", bn: "হিসাবরক্ষণ রিপোর্ট",
-    pending: "Needs the Ledger and payments. Not built yet.",
-    types: [{ value: "trial_balance", label: "Trial Balance", bn: "রেওয়ামিল" }] },
+    types: [
+      { value: "account_summary", label: "Account Summary", bn: "হিসাব সারসংক্ষেপ" },
+      { value: "cash_flow", label: "Cash Flow", bn: "নগদ প্রবাহ" },
+    ] },
   { id: "banking", no: 9, title: "Banking Report", bn: "ব্যাংকিং রিপোর্ট", filter: "bank",
-    pending: "Needs Bank accounts and their transactions. Not built yet.",
     types: [{ value: "balance_statement", label: "Balance Statement", bn: "ব্যালেন্স বিবরণী" }] },
   { id: "income_expense", no: 10, title: "Income - Expense Report", bn: "আয় - ব্যয় রিপোর্ট",
     types: [{ value: "income_expense", label: "Income Expense (F1)", bn: "আয় ব্যয় (ফ১)" }] },
@@ -52,6 +60,7 @@ const today = () => {
   const [year, month] = dhakaToday().split("-").map(Number);
   return { year, month };
 };
+
 const defaults = (s) => ({
   type: s.types[0].value,
   target: "",
@@ -62,6 +71,7 @@ const defaults = (s) => ({
   to: "",
   output: "fast",
 });
+
 const YEARS = Array.from({ length: 7 }, (_, i) => today().year - 5 + i);
 
 const DocIcon = () => (
@@ -69,13 +79,14 @@ const DocIcon = () => (
     <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h6" />
   </svg>
 );
+
 const ResetIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" />
   </svg>
 );
 
-function ReportSection({ s, vehicles, customers }) {
+function ReportSection({ s, vehicles, customers, accounts }) {
   const toast = useToast();
   const [open, setOpen] = useState(s.no === 1);
   const [f, setF] = useState(() => defaults(s));
@@ -93,6 +104,7 @@ function ReportSection({ s, vehicles, customers }) {
     }
     if (f.target && s.filter === "vehicle") p.set("vehicle", f.target);
     if (f.target && s.filter === "customer") p.set("customer", f.target);
+    if (f.target && s.filter === "bank") p.set("account", f.target);
     return `/reports/${s.id}/${f.type}?${p}`;
   };
 
@@ -122,9 +134,10 @@ function ReportSection({ s, vehicles, customers }) {
     setReport(null);
   };
 
-  const targetOptions = s.filter === "vehicle" ? vehicles : s.filter === "customer" ? customers : [];
+  const targetOptions = s.filter === "vehicle" ? vehicles : s.filter === "customer" ? customers : s.filter === "bank" ? accounts : [];
   const targetLabel = s.filter === "customer" ? "Customer (কাষ্টমার)" : s.filter === "bank" ? "Bank account (ব্যাংক হিসাব)" : "Vehicle (যানবাহন)";
-  const allLabel = s.filter === "customer" ? "-- All customers (সকল কাষ্টমার) --" : "-- All vehicles (সকল যানবাহন) --";
+  const allLabel =
+    s.filter === "customer" ? "-- All customers (সকল কাষ্টমার) --" : s.filter === "bank" ? "-- All bank accounts (সকল ব্যাংক হিসাব) --" : "-- All vehicles (সকল যানবাহন) --";
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -156,20 +169,14 @@ function ReportSection({ s, vehicles, customers }) {
 
             {s.filter && (
               <Field label={targetLabel}>
-                {s.filter === "bank" ? (
-                  <select className={inputCls} disabled>
-                    <option>Please select</option>
-                  </select>
-                ) : (
-                  <select className={inputCls} value={f.target} onChange={set("target")}>
-                    <option value="">{allLabel}</option>
-                    {targetOptions.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <select className={inputCls} value={f.target} onChange={set("target")}>
+                  <option value="">{allLabel}</option>
+                  {targetOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </Field>
             )}
 
@@ -250,8 +257,14 @@ function ReportSection({ s, vehicles, customers }) {
 export default function Reports() {
   const [vehicles, setVehicles] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [accounts, setAccounts] = useState([]);
 
   useEffect(() => {
+    api
+      .get("/transactions/accounts")
+      .then((r) => setAccounts(r.items.filter((a) => a.type !== "cash").map((a) => ({ value: a._id, label: a.name }))))
+      .catch(() => {});
+
     // all vehicles and clients (also inactive ones): old trips still belong to them
     api
       .get("/cars?limit=200")
@@ -278,7 +291,7 @@ export default function Reports() {
       </p>
       <div className="space-y-3">
         {SECTIONS.map((s) => (
-          <ReportSection key={s.id} s={s} vehicles={vehicles} customers={customers} />
+          <ReportSection key={s.id} s={s} vehicles={vehicles} customers={customers} accounts={accounts} />
         ))}
       </div>
     </div>
