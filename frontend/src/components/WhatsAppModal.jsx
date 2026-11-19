@@ -1,73 +1,33 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, Modal } from "./ui.jsx";
 
-const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const ua = navigator.userAgent;
+const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+// WhatsApp has no official Linux app, so the website works best there
+const isLinuxDesktop = /Linux/i.test(ua) && !/Android/i.test(ua);
 
 // Direct links, built from the number and message the server prepared
 function links(w) {
   const text = encodeURIComponent(w.message);
   return {
-    // opens the installed WhatsApp app directly (phone and computer)
-    main: `whatsapp://send?phone=${w.to}&text=${text}`,
-    // backup, only if the app is not installed
+    // opens an installed WhatsApp app (phone, Windows, Mac)
+    app: `whatsapp://send?phone=${w.to}&text=${text}`,
+    // opens WhatsApp on the website: works on any computer logged in to WhatsApp Web
     web: isMobile ? `https://wa.me/${w.to}?text=${text}` : `https://web.whatsapp.com/send?phone=${w.to}&text=${text}`,
   };
 }
 
-// the clipboard only accepts PNG images, so the photo is redrawn as a PNG
-async function toPng(blob) {
-  const bmp = await createImageBitmap(blob);
-  const canvas = document.createElement("canvas");
-  canvas.width = bmp.width;
-  canvas.height = bmp.height;
-  canvas.getContext("2d").drawImage(bmp, 0, 0);
-  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-}
+const FIRST = "mt-4 block rounded-xl bg-[#25d366] px-4 py-3 text-center text-base font-semibold text-white hover:bg-[#1ebe5a]";
+const SECOND = "mt-2 block rounded-xl border-2 border-[#25d366] px-4 py-3 text-center text-base font-semibold text-emerald-800 hover:bg-emerald-50";
 
-// Shows the ready message. The manager taps the green button and presses send inside WhatsApp.
+// Shows the ready message. The manager picks a button and presses send inside WhatsApp.
 export default function WhatsAppModal({ whatsapp, canConfirm, onClose, onConfirmSent }) {
   const [opened, setOpened] = useState(false);
-  const [photoBlob, setPhotoBlob] = useState(null); // the driver's photo, loaded in advance so a tap can use it at once
-  const [note, setNote] = useState("");
   const url = whatsapp ? links(whatsapp) : null;
-  const photo = whatsapp?.photo;
 
-  useEffect(() => {
-    if (!photo) return;
-    let gone = false;
-    fetch(photo)
-      .then((r) => r.blob())
-      .then((b) => !gone && setPhotoBlob(b))
-      .catch(() => { });
-    return () => {
-      gone = true;
-    };
-  }, [photo]);
-
-  // phone: opens the share sheet with the photo and the message together
-  const sharePhoto = async () => {
-    setNote("");
-    try {
-      const file = new File([photoBlob], "driver.jpg", { type: photoBlob.type || "image/jpeg" });
-      if (!navigator.canShare?.({ files: [file] })) return setNote("This phone cannot share the photo. Use the green button for the text only.");
-      await navigator.share({ files: [file], text: whatsapp.message });
-      setOpened(true);
-    } catch (e) {
-      if (e.name !== "AbortError") setNote("Could not share the photo. Use the green button for the text only.");
-    }
-  };
-
-  // computer: copies the photo, then it is pasted into the chat with Ctrl+V
-  const copyPhoto = async () => {
-    setNote("");
-    try {
-      const png = await toPng(photoBlob);
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
-      setNote("Photo copied. Open the chat below, click in the message box and press Ctrl+V.");
-    } catch {
-      setNote("Could not copy the photo. Save it from the link below and attach it in the chat.");
-    }
-  };
+  const web = { href: url?.web, label: "Send through WhatsApp Web", external: true };
+  const app = { href: url?.app, label: "Open in WhatsApp app", external: false };
+  const options = isLinuxDesktop ? [web, app] : [app, web];
 
   return (
     <Modal title="Send driver details" onClose={onClose}>
@@ -87,49 +47,23 @@ export default function WhatsAppModal({ whatsapp, canConfirm, onClose, onConfirm
             {whatsapp.message}
           </pre>
 
-          {photo && (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <img src={photo} alt="Driver" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-              <div className="min-w-0 flex-1 basis-40">
-                {isMobile ? (
-                  <Button onClick={sharePhoto} disabled={!photoBlob} className="w-full">
-                    {photoBlob ? "Send with driver photo" : "Loading photo..."}
-                  </Button>
-                ) : (
-                  <Button variant="secondary" onClick={copyPhoto} disabled={!photoBlob} className="w-full sm:w-auto">
-                    {photoBlob ? "Copy driver photo" : "Loading photo..."}
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-          {note && <p className="mt-2 text-xs text-amber-700 [overflow-wrap:anywhere]">{note}</p>}
-
-          <a
-            href={url.main}
-            onClick={() => setOpened(true)}
-            className="mt-4 block rounded-xl bg-[#25d366] px-4 py-3 text-center text-base font-semibold text-white hover:bg-[#1ebe5a]"
-          >
-            Send on WhatsApp
-          </a>
-
-          {!isMobile && (
+          {options.map((o, i) => (
             <a
-              href={url.web}
-              target="_blank"
-              rel="noopener noreferrer"
+              key={o.label}
+              href={o.href}
+              {...(o.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               onClick={() => setOpened(true)}
-              className="mt-2 block text-center text-sm text-emerald-700 underline"
+              className={i === 0 ? FIRST : SECOND}
             >
-              WhatsApp app not installed? Use WhatsApp Web instead
+              {o.label}
             </a>
-          )}
+          ))}
 
           <p className="mt-2 text-xs text-slate-500">
-            {isMobile && photo
-              ? "With the photo: choose WhatsApp and the customer's chat in the share list, then send. Without it: the green button opens the chat with the text ready."
-              : "The chat opens with the message ready. Press send there."}
-            {!isMobile && " WhatsApp Web must be logged in with the company number."}
+            The chat opens with the message ready. Press send there.
+            {isLinuxDesktop
+              ? " On Linux use the website button: log in to WhatsApp Web once and it stays logged in."
+              : " WhatsApp must be logged in with the company number."}
           </p>
 
           {opened && canConfirm && (
