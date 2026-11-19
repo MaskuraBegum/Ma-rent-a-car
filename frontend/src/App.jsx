@@ -37,14 +37,18 @@ import HrFines from "./pages/HrFines.jsx";
 import HrLeaveTypes from "./pages/HrLeaveTypes.jsx";
 import HrSalaryStructure from "./pages/HrSalaryStructure.jsx";
 import HrSettings from "./pages/HrSettings.jsx";
+import { RequireAdmin } from "./components/Auth.jsx";
+import Login from "./pages/Login.jsx";
+import Admins from "./pages/Admins.jsx";
 
 export default function App() {
   return (
     <Routes>
       {/* public page for customers: no menu, no login */}
       <Route path="/book" element={<Book />} />
+      <Route path="/login" element={<Login />} />
 
-      <Route element={<Layout />}>
+      <Route element={<RequireAdmin><Layout /> </RequireAdmin>}>
         <Route index element={<Trips />} />
         <Route path="trips/new" element={<TripForm />} />
         <Route path="trips/:id/edit" element={<TripForm />} />
@@ -88,6 +92,7 @@ export default function App() {
         <Route path="hr/leave-types" element={<HrLeaveTypes />} />
         <Route path="hr/salary-structure" element={<HrSalaryStructure />} />
         <Route path="hr/settings" element={<HrSettings />} />
+        <Route path="admins" element={<Admins />} />
       </Route>
     </Routes>
   );

@@ -10,7 +10,7 @@ const unitSchema = z.object({
 });
 
 export const clientSchema = z.object({
-type: z.enum(["individual", "office", "corporate"]),
+type: z.enum([ "office", "corporate"]),
 name: z.string().trim().min(2).max(100),
 phone: phone.optional(),
 contactName: z.string().trim().max(100).optional(),

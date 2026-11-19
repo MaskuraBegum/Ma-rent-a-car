@@ -7,9 +7,8 @@ const fields = [
     name: "type",
     label: "Client type",
     type: "choice",
-    default: "individual",
+    default: "office",
     options: [
-      { value: "individual", label: "Individual" },
       { value: "office", label: "Office" },
       { value: "corporate", label: "Corporate (many units)" },
     ],
@@ -30,7 +29,7 @@ const fields = [
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
-const TONE = { individual: "slate", office: "blue", corporate: "green" };
+const TONE = { office: "blue", corporate: "green" };
 
 export default function Clients() {
   return (

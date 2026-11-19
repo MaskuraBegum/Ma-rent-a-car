@@ -9,7 +9,7 @@ const unitSchema = new mongoose.Schema({
 
 const clientSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ["individual", "office", "corporate"], required: true },
+    type: { type: String, enum: [ "office", "corporate"], required: true },
     name: { type: String, required: true, trim: true },   // person or company name
     phone: { type: String, unique: true, sparse: true },  // individuals (repeat customers)
     email: { type: String, trim: true, lowercase: true },
@@ -23,7 +23,7 @@ const clientSchema = new mongoose.Schema(
 
 // Rules checked on create
 clientSchema.pre("validate", function () {
-    if (["individual", "office"].includes(this.type) && !this.phone) {
+    if (["office"].includes(this.type) && !this.phone) {
       this.invalidate("phone", "Phone is required for this client");
     }
     if (this.type === "corporate" && this.units.length === 0) {

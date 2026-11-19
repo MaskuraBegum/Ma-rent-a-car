@@ -1,6 +1,8 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { api } from "../api.js";
+import { useAuth } from "./Auth.jsx";
 
 // Left menu: groups open and close. A group with only "to" is a single link.
 const NAV = [
@@ -177,6 +179,7 @@ const groupHas = (g, path) => g.items?.some((i) => path === i.to || (i.to !== "/
 
 export default function Layout() {
   const count = useNewRequests();
+  const { admin, logout } = useAuth();
   const now = useClock();
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(() => window.innerWidth >= 768);
@@ -198,8 +201,7 @@ export default function Layout() {
     });
 
   const linkCls = ({ isActive }) =>
-    `flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${
-      isActive ? "bg-emerald-700 font-medium text-white" : "text-slate-700 hover:bg-slate-100"
+    `flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${isActive ? "bg-emerald-700 font-medium text-white" : "text-slate-700 hover:bg-slate-100"
     }`;
 
   return (
@@ -207,9 +209,8 @@ export default function Layout() {
       {menuOpen && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMenuOpen(false)} />}
 
       <aside
-        className={`${
-          menuOpen ? "flex" : "hidden"
-        } fixed inset-y-0 left-0 z-40 w-64 flex-col overflow-y-auto border-r border-slate-200 bg-white p-3 md:sticky md:top-0 md:h-screen md:shrink-0`}
+        className={`${menuOpen ? "flex" : "hidden"
+          } fixed inset-y-0 left-0 z-40 w-64 flex-col overflow-y-auto border-r border-slate-200 bg-white p-3 md:sticky md:top-0 md:h-screen md:shrink-0`}
       >
         <p className="px-2 pb-1 pt-1 text-lg font-semibold leading-tight text-emerald-800">Maa Rent a Car</p>
         <p className="mb-3 px-2 text-xs text-slate-500">পরিবহন হিসাব</p>
@@ -227,9 +228,8 @@ export default function Layout() {
                 <button
                   type="button"
                   onClick={() => toggle(g.label)}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-slate-100 ${
-                    groupHas(g, pathname) ? "text-emerald-800" : "text-slate-700"
-                  }`}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-slate-100 ${groupHas(g, pathname) ? "text-emerald-800" : "text-slate-700"
+                    }`}
                   aria-expanded={open.has(g.label)}
                 >
                   <span>
@@ -282,6 +282,16 @@ export default function Layout() {
             Requests
             {count > 0 && <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-1.5 text-xs text-white">{count}</span>}
           </Link>
+          <Link
+            to="/admins"
+            className="hidden rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 sm:inline"
+            title="Manage admins"
+          >
+            {admin?.name || "Account"}
+          </Link>
+          <button type="button" onClick={logout} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
+            Sign out
+          </button>
         </header>
         <main className="mx-auto max-w-6xl p-4 md:p-6">
           <Outlet />

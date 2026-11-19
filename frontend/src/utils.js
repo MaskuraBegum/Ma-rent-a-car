@@ -1,3 +1,4 @@
+
 const DHAKA = "Asia/Dhaka";
 
 export const fmtPhone = (p) => (p ? `+${p}` : "");
@@ -17,7 +18,7 @@ export const clientOptions = (clients) =>
   clients.flatMap((c) =>
     c.type === "corporate"
       ? (c.units || []).map((u) => ({ value: `${c._id}|${u._id}`, label: `${c.name} - ${u.name}` }))
-      : [{ value: c._id, label: `${c.name} (${c.type})` }]
+      : [{ value: c._id, label: c.name }]
   );
 
 export const splitClient = (v) => {

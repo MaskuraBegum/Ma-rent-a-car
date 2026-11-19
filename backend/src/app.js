@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import routes from "./routes/index.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import publicRouter from "./routes/public.js";
+import authRouter from "./routes/auth.js";
+import { requireAdmin } from "./middleware/auth.js";
 
 const app = express();
 
@@ -17,9 +19,13 @@ app.use(morgan("dev"));
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
-app.use("/uploads", express.static("uploads"));
+// open to everyone: the customer booking form and the sign-in itself
 app.use("/api/public", publicRouter);
-app.use("/api", routes);   
+app.use("/api/auth", authRouter);
+
+// everything else is for the signed-in admin only
+app.use("/uploads", requireAdmin, express.static("uploads"));
+app.use("/api", requireAdmin, routes); 
 
 app.use(notFound);
 app.use(errorHandler);

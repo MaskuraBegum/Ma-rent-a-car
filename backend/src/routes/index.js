@@ -25,6 +25,7 @@ import Staff from "../models/Staff.js";
 import transactionsRouter from "./transactions.js"; 
 import chartRouter from "./chart.js";  
 import hrRouter from "./hr.js";
+import adminsRouter from "./admins.js";
 
       
 
@@ -78,5 +79,6 @@ router.use("/inventory", inventoryRouter);
 router.use("/transactions", transactionsRouter);
 router.use("/chart", chartRouter);
 router.use("/hr", hrRouter);
+router.use("/admins", adminsRouter);
 
 export default router;

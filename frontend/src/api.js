@@ -21,7 +21,11 @@ async function request(path, { method = "GET", body } = {}) {
 async function file(path) {
   const res = await fetch(BASE + path);
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) window.dispatchEvent(new Event("auth:expired"));
+    // the login ended (or never started): the app sends the person to the sign-in page
+    if (res.status === 401 && !path.startsWith("/auth/login") && !path.startsWith("/auth/me")) {
+      window.dispatchEvent(new Event("auth:expired"));
+    }
     const detail = data.errors?.map((e) => `${e.field}: ${e.message}`).join(", ");
     throw new ApiError(detail || data.message || "Something went wrong");
   }
