@@ -59,6 +59,7 @@ const tripSchema = new mongoose.Schema(
 
     notes: String,
     isPossibleDuplicate: { type: Boolean, default: false },
+    shareToken: { type: String, unique: true, sparse: true }, // random code in the customer's link, made when the WhatsApp message is first prepared
   },
   { timestamps: true }
 );

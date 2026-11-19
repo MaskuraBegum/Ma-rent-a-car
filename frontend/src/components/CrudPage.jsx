@@ -38,6 +38,7 @@ function toPayload(fields, values, multipart) {
       const v = values[f.name];
       if (f.type === "image") {
         if (v instanceof File) fd.append(f.name, v);
+        else if (v === "remove") fd.append(`remove_${f.name}`, "true");
       } else if (v !== "" && v != null) {
         fd.append(f.name, String(v).trim());
       }

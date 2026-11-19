@@ -7,6 +7,6 @@ export const driverSchema = z.object({
   email: z.string().trim().toLowerCase().email().optional(),
   nidNo: z.string().trim().regex(/^(\d{10}|\d{13}|\d{17})$/, "NID must be 10, 13 or 17 digits"),
   licenseNo: z.string().trim().min(5).max(30),
-  photo: z.string().optional(),
+  photo: z.string().nullable().optional(), // null = the photo was removed
   isActive: z.boolean().optional(),
 });

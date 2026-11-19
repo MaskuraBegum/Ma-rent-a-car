@@ -1,5 +1,7 @@
 import Trip from "../models/Trip.js";
 import Client from "../models/Client.js";
+import Driver from "../models/Driver.js";
+import Car from "../models/Car.js";
 
 export const createBooking = async (req, res) => {
   const { name, whatsapp, date, time, pickup, drop, dropDate, dropTime, vehicleType, notes, website } = req.body;
@@ -59,5 +61,34 @@ export const createBooking = async (req, res) => {
   res.status(201).json({
     message: "Request received. We will confirm on WhatsApp shortly.",
     tripNo: trip.tripNo,
+  });
+};
+
+// The customer's page. Only what the customer needs; never money, client or notes.
+export const tripCard = async (req, res) => {
+  const { token } = req.params;
+  const trip = /^[a-f0-9]{32}$/.test(token) ? await Trip.findOne({ shareToken: token }).lean() : null;
+  if (!trip || !["assigned", "sent", "completed", "cancelled"].includes(trip.status)) {
+    return res.status(404).json({ message: "This link is not valid" });
+  }
+  res.set({ "Cache-Control": "no-store", "X-Robots-Tag": "noindex" });
+  if (trip.status === "cancelled") return res.json({ tripNo: trip.tripNo, status: "cancelled" });
+
+  const [driver, car] = await Promise.all([
+    trip.driver ? Driver.findById(trip.driver).select("photo").lean() : null,
+    trip.car ? Car.findById(trip.car).select("companyName model year registrationNo seatCapacity ac").lean() : null,
+  ]);
+  res.json({
+    tripNo: trip.tripNo,
+    status: trip.status,
+    date: trip.date,
+    startTime: trip.startTime,
+    dropDate: trip.dropDate,
+    pickupLocation: trip.pickupLocation || trip.location,
+    dropLocation: trip.dropLocation,
+    driver: { name: trip.driverName, phone: trip.driverPhone, photo: driver?.photo || null },
+    car: car
+      ? { name: `${car.companyName} ${car.model} (${car.year})`, plate: car.registrationNo, seats: car.seatCapacity, ac: car.ac }
+      : { name: trip.vehicleType, plate: trip.vendorCarNo },
   });
 };

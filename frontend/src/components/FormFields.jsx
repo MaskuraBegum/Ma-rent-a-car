@@ -3,22 +3,44 @@ import { Button, Field, inputCls } from "./ui.jsx";
 
 const emptyUnit = { name: "", contactName: "", phone: "", address: "" };
 
+// value: a File (new photo chosen), "remove" (delete the current photo), or null (leave as it is)
 function ImageField({ field, value, current, onChange }) {
-  const preview = useMemo(() => (value instanceof File ? URL.createObjectURL(value) : current || null), [value, current]);
+  const picked = value instanceof File;
+  const removed = value === "remove";
+  const preview = useMemo(() => (picked ? URL.createObjectURL(value) : removed ? null : current || null), [value, current, picked, removed]);
+  const link = "self-start text-sm underline";
   return (
     <Field label={field.label} className="sm:col-span-2">
       <div className="flex items-center gap-3">
         {preview ? (
           <img src={preview} alt="" className="h-16 w-16 rounded-lg object-cover" />
         ) : (
-          <div className="grid h-16 w-16 place-items-center rounded-lg bg-slate-100 text-xs text-slate-400">No image</div>
+          <div className="grid h-16 w-16 place-items-center rounded-lg bg-slate-100 text-xs text-slate-400">{removed ? "Will be removed" : "No image"}</div>
         )}
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={(e) => onChange(e.target.files[0] || null)}
-          className="text-sm"
-        />
+        <div className="flex flex-col gap-1">
+          <input
+            key={picked ? value.name : "none"}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => onChange(e.target.files[0] || null)}
+            className="text-sm"
+          />
+          {picked && (
+            <button type="button" onClick={() => onChange(null)} className={`${link} text-slate-600`}>
+              Clear the chosen file
+            </button>
+          )}
+          {!picked && current && !removed && (
+            <button type="button" onClick={() => onChange("remove")} className={`${link} text-red-600`}>
+              Remove photo
+            </button>
+          )}
+          {removed && (
+            <button type="button" onClick={() => onChange(null)} className={`${link} text-slate-600`}>
+              Keep the photo
+            </button>
+          )}
+        </div>
       </div>
     </Field>
   );

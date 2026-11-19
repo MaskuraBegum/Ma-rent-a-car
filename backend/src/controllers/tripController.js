@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import Trip, { TRANSITIONS } from "../models/Trip.js";
 import Client from "../models/Client.js";
 import Driver from "../models/Driver.js";
@@ -63,6 +64,17 @@ const applyRefs = async (trip, body) => {
   return syncUnit(trip);
 };
 
+// the customer's public page: /t/<random code> on the website
+const cardLink = async (trip) => {
+  if (!trip.shareToken) {
+    const token = crypto.randomBytes(16).toString("hex");
+    await Trip.updateOne({ _id: trip._id }, { shareToken: token });
+    trip.shareToken = token;
+  }
+  const site = (process.env.CLIENT_URL || "").split(",")[0].trim().replace(/\/$/, "");
+  return `${site}/t/${trip.shareToken}`;
+};
+
 // who gets the message: passenger number, else the unit, else the client
 const whatsappFor = async (trip) => {
   let to = trip.passengerPhone;
@@ -74,7 +86,9 @@ const whatsappFor = async (trip) => {
 
   const carId = trip.car?._id || trip.car;
   const car = carId ? await Car.findById(carId) : null;
-  return buildWhatsApp(to, trip, car);
+  const driverId = trip.driver?._id || trip.driver;
+  const driver = driverId ? await Driver.findById(driverId).select("photo") : null;
+  return buildWhatsApp(to, trip, car, driver, await cardLink(trip));
 };
 
 export const listTrips = async (req, res) => {

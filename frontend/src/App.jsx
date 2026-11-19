@@ -17,7 +17,7 @@ import MaintenanceForm from "./pages/MaintenanceForm.jsx";
 import MaintenanceList from "./pages/MaintenanceList.jsx";
 import LedgerBalances from "./pages/LedgerBalances.jsx";
 import LedgerParty from "./pages/LedgerParty.jsx";
-import Dashboard from "./pages/Dashboard.jsx";   
+import Dashboard from "./pages/Dashboard.jsx";
 import PurchaseForm from "./pages/PurchaseForm.jsx";
 import PurchaseList from "./pages/PurchaseList.jsx";
 import PurchaseView from "./pages/PurchaseView.jsx";
@@ -40,15 +40,24 @@ import HrSettings from "./pages/HrSettings.jsx";
 import { RequireAdmin } from "./components/Auth.jsx";
 import Login from "./pages/Login.jsx";
 import Admins from "./pages/Admins.jsx";
+import TripCard from "./pages/TripCard.jsx";
 
 export default function App() {
   return (
     <Routes>
-      {/* public page for customers: no menu, no login */}
+      {/* public pages for customers: no menu, no login */}
       <Route path="/book" element={<Book />} />
+      <Route path="/t/:token" element={<TripCard />} />
       <Route path="/login" element={<Login />} />
 
-      <Route element={<RequireAdmin><Layout /> </RequireAdmin>}>
+      {/* everything below needs a signed-in admin */}
+      <Route
+        element={
+          <RequireAdmin>
+            <Layout />
+          </RequireAdmin>
+        }
+      >
         <Route index element={<Trips />} />
         <Route path="trips/new" element={<TripForm />} />
         <Route path="trips/:id/edit" element={<TripForm />} />
@@ -66,10 +75,9 @@ export default function App() {
         <Route path="maintenance" element={<MaintenanceList />} />
         <Route path="maintenance/new" element={<MaintenanceForm />} />
         <Route path="maintenance/:id/edit" element={<MaintenanceForm />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="ledger/:type" element={<LedgerBalances />} />
         <Route path="ledger/:type/:id" element={<LedgerParty />} />
-        <Route path="dashboard" element={<Dashboard />} /> 
+        <Route path="dashboard" element={<Dashboard />} />
         <Route path="purchases" element={<PurchaseList />} />
         <Route path="purchases/new" element={<PurchaseForm />} />
         <Route path="purchases/:id" element={<PurchaseView />} />
@@ -93,6 +101,7 @@ export default function App() {
         <Route path="hr/salary-structure" element={<HrSalaryStructure />} />
         <Route path="hr/settings" element={<HrSettings />} />
         <Route path="admins" element={<Admins />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   );

@@ -20,7 +20,14 @@ const carLines = (trip, car) => {
   ].filter(Boolean);
 };
 
-export const buildWhatsApp = (to, trip, car) => {
+// a neat 800px square crop of the driver's photo, centred on the face (Cloudinary does the resizing).
+// Only Cloudinary addresses count: an old "/uploads/..." path cannot be opened from outside.
+const photoUrl = (url) =>
+  typeof url === "string" && /^https:\/\/res\.cloudinary\.com\//.test(url)
+    ? url.replace("/upload/", "/upload/w_800,h_800,c_fill,g_face/")
+    : null;
+
+export const buildWhatsApp = (to, trip, car, driver, link) => {
   const sameDay = trip.dropDate && fmtDate(trip.dropDate) === fmtDate(trip.date);
   const lines = [
     "Maa Rent a Car Private Service",
@@ -34,10 +41,12 @@ export const buildWhatsApp = (to, trip, car) => {
     `Driver: ${trip.driverName}`,
     trip.driverPhone ? `Driver phone: +${trip.driverPhone}` : null,
     ...carLines(trip, car),
+    link ? "" : null,
+    link ? `Driver photo and trip details: ${link}` : null,
     "",
     "Thank you for choosing us.",
   ].filter((l) => l !== null);
 
   const message = lines.join("\n");
-  return { to, message, url: `https://wa.me/${to}?text=${encodeURIComponent(message)}` };
+  return { to, message, photo: photoUrl(driver?.photo), url: `https://wa.me/${to}?text=${encodeURIComponent(message)}` };
 };

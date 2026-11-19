@@ -17,26 +17,24 @@ import reportsRouter from "./reports.js";
 import invoicesRouter from "./invoices.js";
 import maintenanceRouter from "./maintenance.js";
 import ledgerRouter from "./ledger.js";
-import dashboardRouter from "./dashboard.js";   
-import purchasesRouter from "./purchases.js";   
-import inventoryRouter from "./inventory.js";  
+import dashboardRouter from "./dashboard.js";
+import purchasesRouter from "./purchases.js";
+import inventoryRouter from "./inventory.js";
 import { staffSchema } from "../validators/staff.js";
-import Staff from "../models/Staff.js";     
-import transactionsRouter from "./transactions.js"; 
-import chartRouter from "./chart.js";  
+import Staff from "../models/Staff.js";
+import transactionsRouter from "./transactions.js";
+import chartRouter from "./chart.js";
 import hrRouter from "./hr.js";
 import adminsRouter from "./admins.js";
 
-      
-
 const router = Router();
 
-router.use("/drivers", makeRouter(crudController(Driver), driverSchema, { upload: imageUpload("photo") }));
+router.use("/drivers", makeRouter(crudController(Driver), driverSchema, { upload: imageUpload("photo", Driver) }));
 
 router.use(
   "/vendors",
   makeRouter(crudController(Vendor, { searchFields: ["name", "companyName", "phone"] }), vendorSchema, {
-    upload: imageUpload("image"),
+    upload: imageUpload("image", Vendor),
   })
 );
 
@@ -72,8 +70,8 @@ router.use("/trips", tripsRouter);
 router.use("/reports", reportsRouter);
 router.use("/invoices", invoicesRouter); // client invoices and vendor (supplier) bills
 router.use("/maintenance", maintenanceRouter);
-router.use("/ledger", ledgerRouter)
-router.use("/dashboard", dashboardRouter); 
+router.use("/ledger", ledgerRouter);
+router.use("/dashboard", dashboardRouter);
 router.use("/purchases", purchasesRouter);
 router.use("/inventory", inventoryRouter);
 router.use("/transactions", transactionsRouter);
