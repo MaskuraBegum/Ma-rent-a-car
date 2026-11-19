@@ -1,6 +1,6 @@
 {
     "rewrites": [
-      { "source": "/api/:path*", "destination": "https://maa-backend.onrender.com/api/:path*" },
+      { "source": "/api/:path*", "destination": "https://ma-rent-a-car.onrender.com/api/:path*" },
       { "source": "/(.*)", "destination": "/index.html" }
     ]
   }
