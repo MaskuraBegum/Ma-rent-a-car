@@ -7,12 +7,10 @@ const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 function links(w) {
   const text = encodeURIComponent(w.message);
   return {
-    // phone: opens the WhatsApp app. computer: opens WhatsApp Web straight into the chat
-    main: isMobile
-      ? `https://wa.me/${w.to}?text=${text}`
-      : `https://web.whatsapp.com/send?phone=${w.to}&text=${text}`,
-    // computer only: the WhatsApp desktop app, if it is installed
-    app: `whatsapp://send?phone=${w.to}&text=${text}`,
+    // opens the installed WhatsApp app directly (phone and computer)
+    main: `whatsapp://send?phone=${w.to}&text=${text}`,
+    // backup, only if the app is not installed
+    web: isMobile ? `https://wa.me/${w.to}?text=${text}` : `https://web.whatsapp.com/send?phone=${w.to}&text=${text}`,
   };
 }
 
@@ -40,7 +38,7 @@ export default function WhatsAppModal({ whatsapp, canConfirm, onClose, onConfirm
     fetch(photo)
       .then((r) => r.blob())
       .then((b) => !gone && setPhotoBlob(b))
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       gone = true;
     };
@@ -109,21 +107,21 @@ export default function WhatsAppModal({ whatsapp, canConfirm, onClose, onConfirm
 
           <a
             href={url.main}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={() => setOpened(true)}
             className="mt-4 block rounded-xl bg-[#25d366] px-4 py-3 text-center text-base font-semibold text-white hover:bg-[#1ebe5a]"
           >
-            {isMobile ? "Send text on WhatsApp" : "Send on WhatsApp Web"}
+            Send on WhatsApp
           </a>
 
           {!isMobile && (
             <a
-              href={url.app}
+              href={url.web}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={() => setOpened(true)}
               className="mt-2 block text-center text-sm text-emerald-700 underline"
             >
-              Open in the WhatsApp desktop app instead
+              WhatsApp app not installed? Use WhatsApp Web instead
             </a>
           )}
 
