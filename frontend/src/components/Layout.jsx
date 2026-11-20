@@ -1,6 +1,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { LogOut, UserRound } from "lucide-react";
 import { api } from "../api.js";
 import { useAuth } from "./Auth.jsx";
 
@@ -102,19 +103,33 @@ const NAV = [
 ];
 
 const DHAKA = "Asia/Dhaka";
+
 const clock = (d) => {
-  const date = d.toLocaleDateString("en-GB", { timeZone: DHAKA, day: "2-digit", month: "2-digit", year: "numeric" });
-  const day = d.toLocaleDateString("en-US", { timeZone: DHAKA, weekday: "short" }).toUpperCase();
-  const time = d.toLocaleTimeString("en-GB", { timeZone: DHAKA, hour12: false });
+  const date = d.toLocaleDateString("en-GB", {
+    timeZone: DHAKA,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const day = d.toLocaleDateString("en-US", {
+    timeZone: DHAKA,
+    weekday: "short",
+  }).toUpperCase();
+  const time = d.toLocaleTimeString("en-GB", {
+    timeZone: DHAKA,
+    hour12: false,
+  });
   return `${date} ${day} - ${time}`;
 };
 
 function useClock() {
   const [now, setNow] = useState(() => new Date());
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
   return now;
 }
 
@@ -141,27 +156,37 @@ function useNewRequests() {
 
   useEffect(() => {
     let stopped = false;
+
     const check = async () => {
       try {
         const r = await api.get("/trips?status=requested&limit=1");
         if (stopped) return;
+
         setCount(r.total);
+
         if (prev.current !== null && r.total !== prev.current) {
           window.dispatchEvent(new Event("trips:changed"));
+
           if (r.total > prev.current) {
             beep();
+
             if ("Notification" in window && Notification.permission === "granted") {
-              new Notification("New booking request", { body: `${r.total} request(s) waiting` });
+              new Notification("New booking request", {
+                body: `${r.total} request(s) waiting`,
+              });
             }
           }
         }
+
         prev.current = r.total;
       } catch {
         /* the server may be restarting: try again next time */
       }
     };
+
     check();
     const id = setInterval(check, 20000);
+
     return () => {
       stopped = true;
       clearInterval(id);
@@ -175,16 +200,22 @@ function useNewRequests() {
   return count;
 }
 
-const groupHas = (g, path) => g.items?.some((i) => path === i.to || (i.to !== "/" && path.startsWith(i.to)));
+const groupHas = (g, path) =>
+  g.items?.some((i) => path === i.to || (i.to !== "/" && path.startsWith(i.to)));
 
 export default function Layout() {
   const count = useNewRequests();
   const { admin, logout } = useAuth();
   const now = useClock();
   const { pathname } = useLocation();
+
   const [menuOpen, setMenuOpen] = useState(() => window.innerWidth >= 768);
-  const [open, setOpen] = useState(() => new Set(NAV.filter((g) => groupHas(g, pathname)).map((g) => g.label)));
-  const [perm, setPerm] = useState("Notification" in window ? Notification.permission : "denied");
+  const [open, setOpen] = useState(
+    () => new Set(NAV.filter((g) => groupHas(g, pathname)).map((g) => g.label))
+  );
+  const [perm, setPerm] = useState(
+    "Notification" in window ? Notification.permission : "denied"
+  );
 
   // the group of the page you are on stays open; on a phone the menu closes after choosing
   useEffect(() => {
@@ -201,18 +232,29 @@ export default function Layout() {
     });
 
   const linkCls = ({ isActive }) =>
-    `flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${isActive ? "bg-emerald-700 font-medium text-white" : "text-slate-700 hover:bg-slate-100"
+    `flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${
+      isActive
+        ? "bg-emerald-700 font-medium text-white"
+        : "text-slate-700 hover:bg-slate-100"
     }`;
 
   return (
     <div className="min-h-screen md:flex">
-      {menuOpen && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMenuOpen(false)} />}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
       <aside
-        className={`${menuOpen ? "flex" : "hidden"
-          } fixed inset-y-0 left-0 z-40 w-64 flex-col overflow-y-auto border-r border-slate-200 bg-white p-3 md:sticky md:top-0 md:h-screen md:shrink-0`}
+        className={`${
+          menuOpen ? "flex" : "hidden"
+        } fixed inset-y-0 left-0 z-40 w-64 flex-col overflow-y-auto border-r border-slate-200 bg-white p-3 md:sticky md:top-0 md:h-screen md:shrink-0`}
       >
-        <p className="px-2 pb-1 pt-1 text-lg font-semibold leading-tight text-emerald-800">Maa Rent a Car</p>
+        <p className="px-2 pb-1 pt-1 text-lg font-semibold leading-tight text-emerald-800">
+          Maa Rent a Car
+        </p>
         <p className="mb-3 px-2 text-xs text-slate-500">পরিবহন হিসাব</p>
 
         <nav className="space-y-1">
@@ -228,15 +270,23 @@ export default function Layout() {
                 <button
                   type="button"
                   onClick={() => toggle(g.label)}
-                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-slate-100 ${groupHas(g, pathname) ? "text-emerald-800" : "text-slate-700"
-                    }`}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-medium hover:bg-slate-100 ${
+                    groupHas(g, pathname) ? "text-emerald-800" : "text-slate-700"
+                  }`}
                   aria-expanded={open.has(g.label)}
                 >
                   <span>
                     {g.label} <span className="text-xs font-normal opacity-70">({g.bn})</span>
                   </span>
-                  <span className={`text-slate-400 transition ${open.has(g.label) ? "rotate-180" : ""}`}>▾</span>
+                  <span
+                    className={`text-slate-400 transition ${
+                      open.has(g.label) ? "rotate-180" : ""
+                    }`}
+                  >
+                    ▾
+                  </span>
                 </button>
+
                 {open.has(g.label) && (
                   <div className="ml-3 mt-1 space-y-1 border-l border-slate-200 pl-2">
                     {g.items.map((i) => (
@@ -244,7 +294,11 @@ export default function Layout() {
                         <span>
                           {i.label} <span className="text-xs opacity-70">({i.bn})</span>
                         </span>
-                        {i.badge && count > 0 && <span className="rounded-full bg-red-600 px-2 text-xs text-white">{count}</span>}
+                        {i.badge && count > 0 && (
+                          <span className="rounded-full bg-red-600 px-2 text-xs text-white">
+                            {count}
+                          </span>
+                        )}
                       </NavLink>
                     ))}
                   </div>
@@ -255,11 +309,20 @@ export default function Layout() {
         </nav>
 
         <div className="mt-auto space-y-2 pt-4 text-sm">
-          <a href="/book" target="_blank" rel="noreferrer" className="block text-emerald-700 hover:underline">
+          <a
+            href="/book"
+            target="_blank"
+            rel="noreferrer"
+            className="block text-emerald-700 hover:underline"
+          >
             Open customer booking form
           </a>
+
           {perm === "default" && (
-            <button onClick={async () => setPerm(await Notification.requestPermission())} className="text-left text-slate-500 hover:underline">
+            <button
+              onClick={async () => setPerm(await Notification.requestPermission())}
+              className="text-left text-slate-500 hover:underline"
+            >
               Turn on alerts for new requests
             </button>
           )}
@@ -276,23 +339,52 @@ export default function Layout() {
           >
             ☰
           </button>
+
           <p className="font-semibold text-emerald-800">Maa Rent a Car</p>
-          <span className="ml-auto hidden text-sm tabular-nums text-slate-600 sm:inline">{clock(now)}</span>
-          <Link to="/" className="relative rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50" title="New booking requests">
+
+          <span className="ml-auto hidden text-sm tabular-nums text-slate-600 sm:inline">
+            {clock(now)}
+          </span>
+
+          <Link
+            to="/"
+            className="relative rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+            title="New booking requests"
+          >
             Requests
-            {count > 0 && <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-1.5 text-xs text-white">{count}</span>}
+            {count > 0 && (
+              <span className="absolute -right-2 -top-2 rounded-full bg-red-600 px-1.5 text-xs text-white">
+                {count}
+              </span>
+            )}
           </Link>
+
+          {/* Admin account: icon on mobile, name on larger screens */}
           <Link
             to="/admins"
-            className="hidden rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 sm:inline"
+            className="flex items-center gap-2 rounded-lg border border-slate-300 p-2 text-sm text-slate-600 transition hover:bg-slate-50 sm:px-3 sm:py-1.5"
             title="Manage admins"
+            aria-label="Manage admin accounts"
           >
-            {admin?.name || "Account"}
+            <UserRound size={18} />
+            <span className="hidden sm:inline">
+              {admin?.name || "Account"}
+            </span>
           </Link>
-          <button type="button" onClick={logout} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
-            Sign out
+
+          {/* Sign out: icon on mobile, text on larger screens */}
+          <button
+            type="button"
+            onClick={logout}
+            className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 p-2 text-slate-600 transition hover:bg-red-50 hover:text-red-600 sm:px-3 sm:py-1.5"
+            title="Sign out"
+            aria-label="Sign out"
+          >
+            <LogOut size={18} />
+            <span className="hidden sm:inline">Sign out</span>
           </button>
         </header>
+
         <main className="mx-auto max-w-6xl p-4 md:p-6">
           <Outlet />
         </main>
